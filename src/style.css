@@ -1,15 +1,56 @@
-.new-tab {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  color: #333;
-  display: block;
-  font-size: 12px;
-  line-height: 16px;
-  margin: 0 0 10px;
-  padding: 10px;
-  position: relative;
-  text-decoration: none;
-  width: 100%;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    box-sizing: border-box;
+    font-size: calc(14px + 4 * ((100vw - 320px) / 960));
+    overscroll-behavior: none;
+    margin: 0 !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    position: relative;
+    font-weight: normal;
+  }
+
+  body {
+    min-height: 100vh;
+    transition: color 0.5s, background-color 0.5s;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media all and (min-width: 1024px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  @media all and (max-width: 767px) {
+    html {
+      font-size: 16px;
+    }
+  }
+}
+
+@layer components {
+  .btn {
+    @apply rounded-md;
+  }
+
+  .btn-outline {
+    @apply border-2;
+  }
+
+  .card {
+    @apply rounded-md;
+  }
 }

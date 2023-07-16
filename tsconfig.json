@@ -6,7 +6,7 @@
   "include": [
     ".plasmo/index.d.ts",
     "./**/*.ts",
-    "./**/*.tsx"
+    "./**/*.vue"
   ],
   "compilerOptions": {
     "paths": {
@@ -14,6 +14,7 @@
         "./src/*"
       ]
     },
+    "types": ["vue"],
     "baseUrl": "."
   }
 }

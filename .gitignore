@@ -15,6 +15,10 @@
 # misc
 .DS_Store
 *.pem
+.idea
+**/*.tsx
+**/*.tsxold
+**/*.lock
 
 # debug
 npm-debug.log*
