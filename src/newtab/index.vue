@@ -4,7 +4,7 @@ import type { App } from "vue";
 
 // Plugins
 import * as VueRouter from "vue-router"
-import { plugin, defaultConfig } from "@formkit/vue"
+import { createPinia } from "pinia"
 
 // Components
 import Workspace from "./components/Workspace"
@@ -59,6 +59,9 @@ library.add(faInstagram)
 library.add(faLinkedin)
 library.add(faYoutube)
 
+// Setup pinia
+const pinia = createPinia()
+
 defineOptions({
     prepare(app: App) {
         // Register our FontAwesome component
@@ -79,7 +82,7 @@ defineOptions({
         })
 
         // Init our plugins
-        app.use(router).use(plugin, defaultConfig)
+        app.use(router).use(pinia)
 
         // Setup our global config
         app.config.globalProperties = {
