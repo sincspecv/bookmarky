@@ -8,7 +8,7 @@ import { plugin, defaultConfig } from "@formkit/vue"
 
 // Components
 import Workspace from "./components/Workspace"
-import About from "./components/About"
+import CreateWorkspace from "./components/CreateWorkspace"
 import Menu from "./components/Menu"
 
 // FontAwesome
@@ -70,9 +70,8 @@ defineOptions({
 
         // Define some routes
         const routes = [
-            { path: '/', component: Workspace },
-            { path: '/:id', component: Workspace },
-            { path: '/about', component: About },
+            { path: '/', component: CreateWorkspace },
+            { path: '/workspace/:id', name: "workspace", component: Workspace, props: true },
         ]
 
         // Create the router instance and pass the `routes` option
@@ -89,12 +88,14 @@ defineOptions({
 </script>
 
 <template>
-    <main id="main">
-        <Menu></Menu>
-        <div class="container mx-auto">
-            <router-view></router-view>
-        </div>
-    </main>
+    <Suspense>
+        <main id="main">
+            <Menu></Menu>
+            <div class="container mx-auto">
+                <router-view></router-view>
+            </div>
+        </main>
+    </Suspense>
 </template>
 
 <style>
