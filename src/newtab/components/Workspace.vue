@@ -58,16 +58,20 @@
         await workspaceData.set(`workspaces`, workspaces)
     }
 
+    // Load our workspace
+    getWorkspace();
+
+    // Watch for our workspace id to change so that we can update the view
     watch(() => route.params.id, async (toParams, prevParams) => {
-        // Only update if we're coming from the add a workspace route
+        // Update if the id param has changed
         if(!!toParams) {
-            console.log("Prev: ", prevParams)
 
             // Update the key to force Vue to reload component
             // updateKey.value = uuidv4();
-            getWorkspace();
+            await getWorkspace();
         }
     })
+
 </script>
 
 <template>

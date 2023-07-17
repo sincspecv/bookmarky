@@ -13,18 +13,12 @@ let workspace = reactive({ name: "", id: "" })
 const router = useRouter()
 const route = useRoute()
 
+// This is really just for debugging but might come in handy later
 workspaceData.watch({
     "workspaces": c => {
         console.log(c);
     }
 })
-
-// Check if we are loading an existing workspace
-// console.log(route.params.id)
-
-if(!!route.params.id) {
-    workspace.id = route.params.id
-}
 
 // Make sure we have a workspaces array to work with
 if (!workspaces) {

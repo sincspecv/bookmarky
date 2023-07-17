@@ -31,7 +31,7 @@
 <template>
   <div class="container mx-auto">
       <div class="join rounded-box gap-[4px] p-10" role="menu" :key="updateKey">
-          <router-link v-for="workspace in workspaces" :to="`/workspace/${workspace.id}`" class="join-item btn btn-neutral rounded-btn" role="menuitem">{{workspace.name}}</router-link>
+          <router-link v-for="workspace in workspaces" :to="`/workspace/${workspace.id}`" class="join-item btn rounded-btn" role="menuitem">{{workspace.name}}</router-link>
           <router-link to="/" class="join-item btn btn-neutral rounded-btn"><font-awesome-icon icon="fas fa-plus"></font-awesome-icon><span class="sr-only">Add new workspace</span></router-link>
       </div>
   </div>
