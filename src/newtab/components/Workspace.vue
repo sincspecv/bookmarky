@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { reactive, watch } from "vue"
+    import { reactive, watch, ref } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
@@ -9,7 +9,8 @@
 
     const workspaceData = new Storage()
     const workspaces = await workspaceData.get("workspaces");
-    const workspace = reactive({ name: "", id: "" })
+    const workspace = reactive({ name: "", id: "", columns: [] })
+    const updateColumns = ref(Date.now())
 
     const router = useRouter()
     const route = useRoute()
@@ -47,6 +48,10 @@
         } else {
             redirectToCreateWorkspace()
         }
+
+        console.log(workspace)
+
+        updateColumns.value = Date.now();
     }
 
     const updateWorkspace = async () => {
@@ -55,6 +60,7 @@
         const workspacesIndex = _.indexOf(workspaces, workspaceObject);
 
         if(workspacesIndex > -1) {
+            console.log(workspaces[workspacesIndex])
             workspaces[workspacesIndex] = workspace
             await workspaceData.set(`workspaces`, workspaces)
         }
@@ -62,6 +68,11 @@
 
     // Load our workspace
     getWorkspace();
+
+    // Watch for changes to our workspace columns
+    watch(() => workspace.columns, async (columns) => {
+        await updateWorkspace()
+    })
 
     // Watch for our workspace id to change so that we can update the view
     watch(() => route.params.id, async (toParams, prevParams) => {
@@ -80,7 +91,9 @@
         <h1 class="text-3xl my-10">{{workspace.name}}</h1>
         <div v-if="!!workspace.id">
             <h2>Workspace id: {{workspace.id}}</h2>
-            <WorkspaceColumn></WorkspaceColumn>
+            <div :key="updateColumns">
+                <WorkspaceColumn :workspace="workspace"></WorkspaceColumn>
+            </div>
         </div>
     </div>
 </template>

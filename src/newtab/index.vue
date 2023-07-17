@@ -27,10 +27,14 @@ import { faArrowUp } from '@fortawesome/free-solid-svg-icons'
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import { faArrowDown } from '@fortawesome/free-solid-svg-icons'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { faSignInAlt } from '@fortawesome/free-solid-svg-icons'
+import { faEllipsisV } from '@fortawesome/free-solid-svg-icons'
+import { faEllipsisH } from '@fortawesome/free-solid-svg-icons'
 import { faTrashAlt } from '@fortawesome/free-regular-svg-icons'
 import { faWindowClose } from '@fortawesome/free-regular-svg-icons'
 import { faMinusSquare } from '@fortawesome/free-regular-svg-icons'
 import { faPlusSquare } from '@fortawesome/free-regular-svg-icons'
+import { faEdit } from '@fortawesome/free-regular-svg-icons'
 import { faFacebookSquare } from '@fortawesome/free-brands-svg-icons'
 import { faTiktok } from '@fortawesome/free-brands-svg-icons'
 import { faInstagram } from '@fortawesome/free-brands-svg-icons'
@@ -52,10 +56,14 @@ library.add(faArrowUp)
 library.add(faArrowRight)
 library.add(faArrowDown)
 library.add(faArrowLeft)
+library.add(faSignInAlt)
+library.add(faEllipsisV)
+library.add(faEllipsisH)
 library.add(faTrashAlt)
 library.add(faWindowClose)
 library.add(faMinusSquare)
 library.add(faPlusSquare)
+library.add(faEdit)
 library.add(faFacebookSquare)
 library.add(faTiktok)
 library.add(faInstagram)
