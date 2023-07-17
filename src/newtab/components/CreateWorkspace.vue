@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { reactive } from "vue"
+import { reactive} from "vue"
 import { useRouter, useRoute } from "vue-router"
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 import { v4 as uuidv4 } from "uuid"
 import { Storage } from "@plasmohq/storage"
 import * as _ from "lodash-es"
 
+const router = useRouter()
+const route = useRoute()
+
 const workspaceData = new Storage()
 let workspaces = await workspaceData.get("workspaces");
 let workspace = reactive({ name: "", id: "" })
-
-const router = useRouter()
-const route = useRoute()
 
 // This is really just for debugging but might come in handy later
 workspaceData.watch({

@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { reactive } from "vue"
+import type { App } from "vue";
 
 // Plugins
 import * as VueRouter from "vue-router"
@@ -9,7 +9,6 @@ import { plugin, defaultConfig } from "@formkit/vue"
 // Components
 import Workspace from "./components/Workspace"
 import CreateWorkspace from "./components/CreateWorkspace"
-import Menu from "./components/Menu"
 
 // FontAwesome
 /* import the fontawesome core */
@@ -38,6 +37,7 @@ import { faTiktok } from '@fortawesome/free-brands-svg-icons'
 import { faInstagram } from '@fortawesome/free-brands-svg-icons'
 import { faLinkedin } from '@fortawesome/free-brands-svg-icons'
 import { faYoutube } from '@fortawesome/free-brands-svg-icons'
+import Menu from "~newtab/components/Menu.vue";
 
 library.add(faBars)
 library.add(faCog)
@@ -59,10 +59,6 @@ library.add(faInstagram)
 library.add(faLinkedin)
 library.add(faYoutube)
 
-import type { App } from "vue"
-
-const state = reactive({ count: 0, action: null })
-
 defineOptions({
     prepare(app: App) {
         // Register our FontAwesome component
@@ -70,7 +66,7 @@ defineOptions({
 
         // Define some routes
         const routes = [
-            { path: '/', component: CreateWorkspace },
+            { path: '/', name: "create-workspace", component: CreateWorkspace },
             { path: '/workspace/:id', name: "workspace", component: Workspace, props: true },
         ]
 
