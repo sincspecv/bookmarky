@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive} from "vue"
+import { reactive, ref, onMounted } from "vue"
 import { useRouter, useRoute } from "vue-router"
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 import { v4 as uuidv4 } from "uuid"
@@ -27,13 +27,17 @@ if (!workspaces) {
 
 // Check if our workspace exists
 const workspaceObject = _.find(workspaces, {id: workspace.id})
-const workspacesIndex = _.indexOf(workspaces, workspaceObject);
 
 // We have it. Let's set up our reactive variables
-if(workspacesIndex > -1) {
-    workspace.name = workspaceObject.name
-    workspace.id = workspaceObject.id
+if(!!workspaceObject) {
+    router.push({name: "workspace", params: {id: workspaceObject.id}, replace: true})
 }
+
+// Set our focus on the input on initial load
+const workspaceNameInput = ref(null);
+onMounted(() => {
+    workspaceNameInput.value.focus();
+})
 
 const addWorkspace = async () => {
     // Make sure we have a workspace name
@@ -42,7 +46,9 @@ const addWorkspace = async () => {
     }
 
     // Make sure we have a workspace id
-    workspace.id = uuidv4();
+    if(!workspace.id) {
+        workspace.id = uuidv4();
+    }
 
     // Update our workspace in storage
     workspaces.push(workspace);
@@ -63,7 +69,7 @@ const addWorkspace = async () => {
                 <label for="workspaceName" class="text-base">
                     Enter a unique name for your workspace
                 </label>
-                <input type="text" id="workspaceName" name="workspaceName"  placeholder="Workspace Name" class="input input-bordered w-full" v-model="workspace.name" />
+                <input type="text" id="workspaceName" name="workspaceName" ref="workspaceNameInput" placeholder="Workspace Name" class="input input-lg input-bordered w-full" v-model="workspace.name" />
                 <button type="submit" class="btn enabled:btn-primary disabled:btn-active" :disabled="!workspace.name">Add Workspace</button>
             </form>
         </div>

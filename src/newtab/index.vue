@@ -4,7 +4,6 @@ import type { App } from "vue";
 
 // Plugins
 import * as VueRouter from "vue-router"
-import { createPinia } from "pinia"
 
 // Components
 import Workspace from "./components/Workspace"
@@ -39,6 +38,10 @@ import { faLinkedin } from '@fortawesome/free-brands-svg-icons'
 import { faYoutube } from '@fortawesome/free-brands-svg-icons'
 import Menu from "~newtab/components/Menu.vue";
 
+const workspaceModel = {
+    id: "your-mpm"
+}
+
 library.add(faBars)
 library.add(faCog)
 library.add(faPlus)
@@ -58,9 +61,6 @@ library.add(faTiktok)
 library.add(faInstagram)
 library.add(faLinkedin)
 library.add(faYoutube)
-
-// Setup pinia
-const pinia = createPinia()
 
 defineOptions({
     prepare(app: App) {
@@ -82,7 +82,7 @@ defineOptions({
         })
 
         // Init our plugins
-        app.use(router).use(pinia)
+        app.use(router)
 
         // Setup our global config
         app.config.globalProperties = {

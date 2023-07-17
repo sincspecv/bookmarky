@@ -17,7 +17,6 @@
   watch(() => route.params.id, async (toParams, prevParams) => {
       // Only update if we're coming from the add a workspace route
       if(!!toParams && prevParams === undefined) {
-          console.log("Prev: ", prevParams)
           workspaces = await workspaceData.get("workspaces");
 
           // Update the key to force Vue to reload component
