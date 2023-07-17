@@ -35,39 +35,37 @@ if(workspacesIndex > -1) {
     workspace.id = workspaceObject.id
 }
 
-// console.log(workspaces);
-
 const addWorkspace = async () => {
-    // Make sure we're not overwriting an existing workspace
-    if(!workspace.id) {
-        workspace.id = uuidv4();
+    // Make sure we have a workspace name
+    if(!workspace.name) {
+        return false;
     }
 
+    // Make sure we have a workspace id
+    workspace.id = uuidv4();
+
+    // Update our workspace in storage
     workspaces.push(workspace);
+
     await workspaceData.set(`workspaces`, workspaces)
         .then(() => {
             router.push({name: "workspace", params: {id: workspace.id}, replace: true})
         })
-
 }
 
 </script>
 
 <template>
-    <div class="container">
-        <h1 class="text-3xl my-10">Workspace</h1>
+    <div>
+        <h1 class="text-3xl my-10">Add a New Workspace</h1>
         <div v-if="!workspace.id" class="rounded-box drop-shadow-md bg-neutral p-20">
-            <h2 class="text-2xl mb-10">Add a New Workspace</h2>
             <form @submit.prevent="addWorkspace" class="flex flex-col w-full gap-10" x-data="FormHandler">
                 <label for="workspaceName" class="text-base">
                     Enter a unique name for your workspace
                 </label>
                 <input type="text" id="workspaceName" name="workspaceName"  placeholder="Workspace Name" class="input input-bordered w-full" v-model="workspace.name" />
-                <button type="submit" class="btn btn-primary">Add Workspace</button>
+                <button type="submit" class="btn enabled:btn-primary disabled:btn-active" :disabled="!workspace.name">Add Workspace</button>
             </form>
-        </div>
-        <div v-if="!!workspace.id">
-            <h2>Workspace id: {{workspace.id}}</h2>
         </div>
     </div>
 </template>

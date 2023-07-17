@@ -46,6 +46,10 @@
     @apply rounded-md;
   }
 
+  .btn.router-link-exact-active {
+    @apply btn-info;
+  }
+
   .btn-outline {
     @apply border-2;
   }

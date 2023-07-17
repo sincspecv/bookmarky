@@ -82,7 +82,13 @@ defineOptions({
             routes, // short for `routes: routes`
         })
 
+        // Init our plugins
         app.use(router).use(plugin, defaultConfig)
+
+        // Setup our global config
+        app.config.globalProperties = {
+            version: "0.1.0"
+        }
     }
 })
 </script>
@@ -96,6 +102,9 @@ defineOptions({
             </div>
         </main>
     </Suspense>
+    <footer id="colophon" class="container mx-auto text-right my-10">
+        <p>Version: {{version}}</p>
+    </footer>
 </template>
 
 <style>
