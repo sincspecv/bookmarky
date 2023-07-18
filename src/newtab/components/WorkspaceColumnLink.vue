@@ -9,7 +9,7 @@ const props = defineProps(['link'])
 
 <template>
     <!-- Link -->
-    <button class="bg-neutral hover:drop-shadow-md min-w-0 p-10 rounded-md flex flex-col flex-nowrap justify-start items-center gap-5 hover:z-10">
+    <button class="bg-neutral hover:drop-shadow-lg min-w-0 p-10 rounded-md flex flex-col flex-nowrap justify-start items-center gap-5 hover:z-10">
         <div class="flex justify-start flex-nowrap gap-5 max-w-full">
             <div class="avatar">
                 <figure class="w-20 rounded" v-if="props.link.favIconUrl">
@@ -28,7 +28,7 @@ const props = defineProps(['link'])
                     <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
                 </label>
                 <ul tabindex="0" class="dropdown-content z-10 menu p-2 shadow bg-base-100 rounded-box w-content">
-                    <li><a @click="console.log('clicked')"><font-awesome-icon icon="far fa-edit" role="button" :aria-controls="`column-title-${props.link.id}`"></font-awesome-icon> Rename</a></li>
+                    <li><a @click="console.log('clicked')"><font-awesome-icon icon="far fa-edit" role="button" :aria-controls="`column-title-${props.link.id}`"></font-awesome-icon> Edit</a></li>
                     <li><a @click="console.log('clicked')" role="button" :aria-controls="props.link.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
                 </ul>
             </div>

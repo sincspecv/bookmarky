@@ -143,7 +143,7 @@ const addTabLink = (tab = {}) => {
 <template>
     <!-- Column Title -->
     <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
-        <div class="text-xl relative mb-10 p-10">
+        <div class="text-xl relative p-10">
             <div class="flex flex-row justify-between content-center" v-if="!showInput">
                 <h2>{{column.title}}</h2>
                 <div class="dropdown dropdown-bottom dropdown-end h-full">
@@ -180,20 +180,22 @@ const addTabLink = (tab = {}) => {
         </div>
         <!-- /Column Title -->
         <!-- Links Container -->
-        <div class="w-full grid grid-rows-auto gap-10 overflow-y-auto overflow-x-hidden" v-if="!!column.id">
-            <!-- Links -->
-            <WorkspaceColumnLink v-for="link in column.links" :link="link"/>
-            <!-- /Links -->
-            <!-- Add Link Button -->
-            <a class="w-full btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
-             title="Add a new link"
-             role="button"
-             @click="showAddLinkModal"
-            >
-                <font-awesome-icon icon="fas fa-plus" class="mx-auto"></font-awesome-icon>
-                <span class="sr-only">Add new link</span>
-            </a>
-            <!-- /Add Link Button -->
+        <div class="relative overflow-y-scroll" style="height: calc(100% - 72px)">
+            <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column.id">
+                <!-- Links -->
+                <WorkspaceColumnLink v-for="link in column.links" :link="link"/>
+                <!-- /Links -->
+                <!-- Add Link Button -->
+                <a class="w-full btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
+                   title="Add a new link"
+                   role="button"
+                   @click="showAddLinkModal"
+                >
+                    <font-awesome-icon icon="fas fa-plus" class="mx-auto"></font-awesome-icon>
+                    <span class="sr-only">Add new link</span>
+                </a>
+                <!-- /Add Link Button -->
+            </div>
         </div>
         <!-- /Links Container -->
     </div>
