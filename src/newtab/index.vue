@@ -91,27 +91,21 @@ defineOptions({
 
         // Init our plugins
         app.use(router)
-
-        // Setup our global config
-        app.config.globalProperties = {
-            version: "0.1.0"
-        }
     }
 })
 </script>
 
 <template>
-    <Suspense>
-        <main id="main">
-            <Menu></Menu>
-            <div class="container mx-auto">
-                <router-view></router-view>
-            </div>
-        </main>
-    </Suspense>
-    <footer id="colophon" class="container mx-auto text-right my-10">
-        <p>Version: {{version}}</p>
-    </footer>
+    <div class="app-container h-full">
+        <Suspense>
+            <main id="main" class="h-full">
+                <Menu></Menu>
+                <div class="container mx-auto h-full">
+                    <router-view></router-view>
+                </div>
+            </main>
+        </Suspense>
+    </div>
 </template>
 
 <style>

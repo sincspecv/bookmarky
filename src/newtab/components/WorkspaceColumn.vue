@@ -103,7 +103,7 @@ const removeColumn = () => {
 </script>
 
 <template>
-  <div class="w-50 p-20 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
+  <div class="w-[21.378rem] overflow-y-auto overflow-x-hidden h-full p-20 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
       <div class="text-xl relative">
           <div class="flex flex-row justify-between content-center"  v-if="!showInput">
               <h2>

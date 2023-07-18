@@ -94,11 +94,10 @@
 </script>
 
 <template>
-    <div class="container">
+    <div class="h-full flex flex-col">
         <h1 class="text-3xl my-10">{{workspace.name}}</h1>
-        <div v-if="!!workspace.id">
-            <h2>Workspace id: {{workspace.id}}</h2>
-            <div :key="updateColumns">
+        <div v-if="!!workspace.id" class="flex-1">
+            <div :key="updateColumns" class="grid grid-cols-auto h-full py-10">
                 <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-for="column in workspace.columns" :column="column"></WorkspaceColumn>
                 <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-if="!workspace.columns.length"></WorkspaceColumn>
             </div>
