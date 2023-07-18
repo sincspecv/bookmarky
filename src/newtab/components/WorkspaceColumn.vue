@@ -10,7 +10,7 @@ const router = useRouter()
 const route = useRoute()
 
 // Collect our props from the parent component
-const props = defineProps(['workspace'])
+const props = defineProps(['workspace', 'column'])
 
 // And our emits
 const emits = defineEmits(['update'])
@@ -24,24 +24,26 @@ const titleInput = ref(null)
 const column = reactive({title: "", id: "", links: []})
 const showInput = ref(!column.title)
 
+// Check if we have a column
+if(!!props.column) {
+    Object.entries(props.column).forEach(_column => {
+        const index = _.head(_column)
+        column[index] = props.column[index]
+    })
+    
+    showInput.value = false;
+}
+
 /**
  * Focus on the title input if it is visible on mount
  *
  * @see https://vuejs.org/guide/essentials/template-refs.html#accessing-the-refs
  */
 onMounted(() => {
-    if(showInput) {
+    if(showInput.value) {
         titleInput.value.focus();
     }
 })
-
-// Watch for changes to our column
-watch(() => column.title, (to, from) => {
-    // Make sure we're not typing a new title and then save our data
-    if(!showInput) {
-
-    }
-}, {deep: true})
 
 const updateTitle = () => {
     if(!column.id) {

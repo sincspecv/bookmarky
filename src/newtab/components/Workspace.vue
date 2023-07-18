@@ -48,7 +48,6 @@
                 const index = _.head(_workspace)
                 workspace[index] = workspaceObject[index]
             })
-            console.log("Workspace bootstrapped: ", workspace)
         } else {
             redirectToCreateWorkspace()
         }
@@ -61,26 +60,14 @@
         const workspaceObject = _.find(workspaces.value, {id: workspace.id})
         const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
 
-        console.log("Workspace ID: ", workspace.id)
-        console.log("Workspaces Array: ", workspaces.value)
-        console.log("Workspace Object: ", workspaceObject)
-
         if(workspacesIndex > -1) {
-            console.log("Workspace Before: ", workspaces.value[workspacesIndex])
             workspaces.value[workspacesIndex] = workspace
-            console.log("Workspace After: ", workspaces.value[workspacesIndex])
             await workspaceData.set(`workspaces`, workspaces.value)
         }
     }
 
     // Load our workspace
     getWorkspace();
-
-    // Watch for changes to our workspace columns
-    watch(() => workspace.columns, async (columns) => {
-        console.log(columns)
-        // await updateWorkspace()
-    }, {deep: true})
 
     // Watch for our workspace id to change so that we can update the view
     watch(() => route.params.id, async (toParams, prevParams) => {
@@ -100,7 +87,8 @@
         <div v-if="!!workspace.id">
             <h2>Workspace id: {{workspace.id}}</h2>
             <div :key="updateColumns">
-                <WorkspaceColumn :workspace="workspace" @update="updateWorkspace"></WorkspaceColumn>
+                <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-for="column in workspace.columns" :column="column"></WorkspaceColumn>
+                <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-if="!workspace.columns.length"></WorkspaceColumn>
             </div>
         </div>
     </div>
