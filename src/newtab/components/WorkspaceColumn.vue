@@ -30,7 +30,7 @@ if(!!props.column) {
         const index = _.head(_column)
         column[index] = props.column[index]
     })
-    
+
     showInput.value = false;
 }
 
@@ -45,29 +45,37 @@ onMounted(() => {
     }
 })
 
-const updateTitle = () => {
+const updateColumn = () => {
     if(!column.id) {
         column.id = uuidv4()
     }
 
+    // Find the column in the workspace object
     const columnObject = _.find(props.workspace.columns, { id: column.id })
     const columnIndex = _.indexOf(props.workspace.columns, columnObject);
 
+    // Update the column
     if(columnIndex > -1) {
-        Object.entries(props.workspace.columns).forEach(_column => {
+        Object.entries(props.workspace.columns[columnIndex]).forEach(_column => {
             const index = _.head(_column)
-            props.workspace.columns[index] = columnObject[index]
+            props.workspace.columns[columnIndex][index] = column[index]
         })
     } else {
         props.workspace.columns.push(column);
     }
 
-    console.log("Column change: ", column)
-    console.log("Column change: ", props.workspace)
-
     emits('update', props.workspace)
 
     hideTitleInput()
+}
+
+const showTitleInput = () => {
+    showInput.value = true;
+
+    /**
+     * TODO: Fix error when trying to focus on input
+     */
+    // titleInput.value.focus();
 }
 
 const hideTitleInput = () => {
@@ -82,10 +90,20 @@ const hideTitleInput = () => {
         props.workspace.columns.push(column);
     }
 }
+
+const removeColumn = () => {
+    const columnObject = _.find(props.workspace.columns, { id: column.id })
+    const columnIndex = _.indexOf(props.workspace.columns, columnObject);
+
+    if(columnIndex > -1) {
+        props.workspace.columns.splice(columnIndex, 1)
+        emits('update', props.workspace)
+    }
+}
 </script>
 
 <template>
-  <div class="w-50 p-20 rounded-box drop-shadow-md bg-neutral text-lg">
+  <div class="w-50 p-20 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
       <div class="text-xl relative">
           <div class="flex flex-row justify-between content-center"  v-if="!showInput">
               <h2>
@@ -99,12 +117,12 @@ const hideTitleInput = () => {
                       <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
                   </label>
                   <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
-                      <li><a @click="showInput = !showInput"><font-awesome-icon icon="far fa-edit"></font-awesome-icon> Rename</a></li>
-                      <li><a><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
+                      <li><a @click="showTitleInput"><font-awesome-icon icon="far fa-edit" role="button" :aria-controls="`column-title-${column.id}`"></font-awesome-icon> Rename</a></li>
+                      <li><a @click="removeColumn()" role="button" :aria-controls="column.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
                   </ul>
               </div>
           </div>
-          <form class="relative" v-if="!!showInput" @submit.prevent="updateTitle">
+          <form class="relative" v-if="!!showInput" @submit.prevent="updateColumn">
               <label :for="`column-title-${column.id}`" class="sr-only">Collection title</label>
               <input
                       ref="titleInput"

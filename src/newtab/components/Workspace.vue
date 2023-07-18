@@ -35,8 +35,10 @@
         // Make sure we have a workspaces array to work with
         if (!workspaces.value) {
             await workspaceData.set("workspaces", []);
-            workspaces.value = await workspaceData.get("workspaces");
         }
+
+        // Make sure we have updated workspace data
+        workspaces.value = await workspaceData.get("workspaces");
 
         // Check if our workspace exists
         const workspaceObject = _.find(workspaces.value, {id: route.params.id})
@@ -46,6 +48,16 @@
         if(workspacesIndex > -1) {
             Object.entries(workspace).forEach(_workspace => {
                 const index = _.head(_workspace)
+
+                // Get rid of null values in any arrays
+                if(Array.isArray(workspaceObject[index])) {
+                    workspaceObject[index].forEach((item, i) => {
+                        if(item === null) {
+                            workspaceObject[index].splice(i, 1);
+                        }
+                    })
+                }
+
                 workspace[index] = workspaceObject[index]
             })
         } else {
