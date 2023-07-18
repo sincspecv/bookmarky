@@ -1,13 +1,23 @@
 <script setup lang="ts">
-import { reactive, ref, watch, onMounted } from "vue"
+import * as browser from "webextension-polyfill"
+import { reactive, ref, onMounted } from "vue"
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 import { v4 as uuidv4 } from "uuid"
 import { Storage } from "@plasmohq/storage"
 import * as _ from "lodash-es"
 import {useRoute, useRouter} from "vue-router";
+import WorkspaceColumnLink from "./WorkspaceColumnLink"
 
 const router = useRouter()
 const route = useRoute()
+
+// Get our browser tabs
+const browserTabs = ref(await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "file://*/*"]}))
+
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    browserTabs.value = await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "file://*/*"]});
+    console.log(browserTabs.value)
+})
 
 // Collect our props from the parent component
 const props = defineProps(['workspace', 'column'])
@@ -20,7 +30,11 @@ if(!props.workspace) {
     router.push({name: "create-workspace", replace: true})
 }
 
+// Init our element refs
 const titleInput = ref(null)
+const addLinkModal = ref(null)
+
+// Init our column
 const column = reactive({title: "", id: "", links: []})
 const showInput = ref(!column.title)
 
@@ -100,29 +114,52 @@ const removeColumn = () => {
         emits('update', props.workspace)
     }
 }
+
+const showAddLinkModal = () => {
+    addLinkModal.value.showModal()
+}
+
+const closeAddLinkModal = () => {
+    addLinkModal.value.close()
+}
+
+const addTabLink = (tab = {}) => {
+    console.log(tab)
+    const link = {
+        id: uuidv4(),
+        title: tab.title,
+        url: tab.url,
+        favIconUrl: tab.favIconUrl,
+        createdOn: Date.now(),
+        updatedOn: Date.now()
+    }
+
+    column.links.push(link);
+    emits('update', props.workspace)
+    closeAddLinkModal();
+}
 </script>
 
 <template>
-  <div class="w-[21.378rem] overflow-y-auto overflow-x-hidden h-full p-20 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
-      <div class="text-xl relative">
-          <div class="flex flex-row justify-between content-center"  v-if="!showInput">
-              <h2>
-                  {{column.title}}
-              </h2>
-              <div class="dropdown dropdown-bottom dropdown-end h-full">
-                  <label
+    <!-- Column Title -->
+    <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
+        <div class="text-xl relative mb-10 p-10">
+            <div class="flex flex-row justify-between content-center" v-if="!showInput">
+                <h2>{{column.title}}</h2>
+                <div class="dropdown dropdown-bottom dropdown-end h-full">
+                    <label
                       tabindex="0"
                       class="btn btn-ghost hover:btn-neutral btn-sm opacity-25 hover:opacity-100"
-                  >
+                    >
                       <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
-                  </label>
-                  <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
+                    </label>
+                    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
                       <li><a @click="showTitleInput"><font-awesome-icon icon="far fa-edit" role="button" :aria-controls="`column-title-${column.id}`"></font-awesome-icon> Rename</a></li>
                       <li><a @click="removeColumn()" role="button" :aria-controls="column.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
-                  </ul>
-              </div>
-          </div>
-          <form class="relative" v-if="!!showInput" @submit.prevent="updateColumn">
+                    </ul>
+                </div>
+            </div>
+            <form class="relative" v-if="!!showInput" @submit.prevent="updateColumn">
               <label :for="`column-title-${column.id}`" class="sr-only">Collection title</label>
               <input
                       ref="titleInput"
@@ -140,8 +177,56 @@ const removeColumn = () => {
                   <font-awesome-icon icon="fas fa-sign-in-alt"></font-awesome-icon>
               </button>
           </form>
-      </div>
-  </div>
+        </div>
+        <!-- /Column Title -->
+        <!-- Links Container -->
+        <div class="w-full grid grid-rows-auto gap-10 overflow-y-auto overflow-x-hidden" v-if="!!column.id">
+            <!-- Links -->
+            <WorkspaceColumnLink v-for="link in column.links" :link="link"/>
+            <!-- /Links -->
+            <!-- Add Link Button -->
+            <a class="w-full btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
+             title="Add a new link"
+             role="button"
+             @click="showAddLinkModal"
+            >
+                <font-awesome-icon icon="fas fa-plus" class="mx-auto"></font-awesome-icon>
+                <span class="sr-only">Add new link</span>
+            </a>
+            <!-- /Add Link Button -->
+        </div>
+        <!-- /Links Container -->
+    </div>
+
+    <!-- Add Link Modal -->
+    <dialog :id="`${column.id}_add_link`" class="modal" v-if="!!column.id" ref="addLinkModal">
+        <div class="modal-box">
+            <h2 class="font-bold text-lg">Add a link</h2>
+            <p class="py-4">Select one of your open tabs below</p>
+            <div class="h-45 w-full carousel carousel-vertical rounded-md">
+                <button
+                    v-for="tab in browserTabs"
+                    @click="addTabLink(tab)"
+                    class="btn btn-lg join-item rounded-none flex justify-start flex-nowrap gap-5"
+                >
+                    <div class="avatar">
+                        <figure class="w-24 rounded">
+                            <img :src="tab.favIconUrl" />
+                        </figure>
+                    </div>
+                    <div class="flex flex-col text-left overflow-hidden">
+                        <h3 class="normal-case text-bold text-md truncate text-ellipses mb-1 tracking-normal">{{tab.title}}</h3>
+                        <span class="normal-case text-xs overflow-hidden truncate text-ellipses">{{tab.url}}</span>
+                    </div>
+                </button>
+            </div>
+            <div class="modal-action">
+                <button class="btn btn-neutral btn-sm" @click="closeAddLinkModal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm" @click="closeAddLinkModal">Add</button>
+            </div>
+        </div>
+    </dialog>
+    <!-- /Add Link Modal -->
 </template>
 
 <style scoped>
