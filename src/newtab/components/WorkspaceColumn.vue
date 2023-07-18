@@ -12,6 +12,9 @@ const route = useRoute()
 // Collect our props from the parent component
 const props = defineProps(['workspace'])
 
+// And our emits
+const emits = defineEmits(['update'])
+
 // Make sure we have a workspace and redirect if not
 if(!props.workspace) {
     router.push({name: "create-workspace", replace: true})
@@ -36,11 +39,34 @@ onMounted(() => {
 watch(() => column.title, (to, from) => {
     // Make sure we're not typing a new title and then save our data
     if(!showInput) {
-        console.log("Column change: ", column)
-        console.log("Column change: ", props.workspace)
-        props.workspace.columns.push(column);
+
     }
 }, {deep: true})
+
+const updateTitle = () => {
+    if(!column.id) {
+        column.id = uuidv4()
+    }
+
+    const columnObject = _.find(props.workspace.columns, { id: column.id })
+    const columnIndex = _.indexOf(props.workspace.columns, columnObject);
+
+    if(columnIndex > -1) {
+        Object.entries(props.workspace.columns).forEach(_column => {
+            const index = _.head(_column)
+            props.workspace.columns[index] = columnObject[index]
+        })
+    } else {
+        props.workspace.columns.push(column);
+    }
+
+    console.log("Column change: ", column)
+    console.log("Column change: ", props.workspace)
+
+    emits('update', props.workspace)
+
+    hideTitleInput()
+}
 
 const hideTitleInput = () => {
     // Make sure there is an actual value in the input
@@ -76,7 +102,7 @@ const hideTitleInput = () => {
                   </ul>
               </div>
           </div>
-          <form class="relative" v-if="!!showInput" @submit.prevent="hideTitleInput">
+          <form class="relative" v-if="!!showInput" @submit.prevent="updateTitle">
               <label :for="`column-title-${column.id}`" class="sr-only">Collection title</label>
               <input
                       ref="titleInput"

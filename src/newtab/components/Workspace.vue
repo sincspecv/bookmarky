@@ -58,12 +58,18 @@
 
     const updateWorkspace = async () => {
         // Check if our workspace exists
-        const workspaceObject = _.find(workspaces, {id: workspace.id})
-        const workspacesIndex = _.indexOf(workspaces, workspaceObject);
+        const workspaceObject = _.find(workspaces.value, {id: workspace.id})
+        const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
+
+        console.log("Workspace ID: ", workspace.id)
+        console.log("Workspaces Array: ", workspaces.value)
+        console.log("Workspace Object: ", workspaceObject)
 
         if(workspacesIndex > -1) {
-            workspaces[workspacesIndex] = workspace
-            await workspaceData.set(`workspaces`, workspaces)
+            console.log("Workspace Before: ", workspaces.value[workspacesIndex])
+            workspaces.value[workspacesIndex] = workspace
+            console.log("Workspace After: ", workspaces.value[workspacesIndex])
+            await workspaceData.set(`workspaces`, workspaces.value)
         }
     }
 
@@ -72,7 +78,8 @@
 
     // Watch for changes to our workspace columns
     watch(() => workspace.columns, async (columns) => {
-        await updateWorkspace()
+        console.log(columns)
+        // await updateWorkspace()
     }, {deep: true})
 
     // Watch for our workspace id to change so that we can update the view
@@ -93,7 +100,7 @@
         <div v-if="!!workspace.id">
             <h2>Workspace id: {{workspace.id}}</h2>
             <div :key="updateColumns">
-                <WorkspaceColumn :workspace="workspace"></WorkspaceColumn>
+                <WorkspaceColumn :workspace="workspace" @update="updateWorkspace"></WorkspaceColumn>
             </div>
         </div>
     </div>
