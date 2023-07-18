@@ -33,12 +33,14 @@ onMounted(() => {
 })
 
 // Watch for changes to our column
-watch(column, (to, from) => {
+watch(() => column.title, (to, from) => {
     // Make sure we're not typing a new title and then save our data
     if(!showInput) {
+        console.log("Column change: ", column)
+        console.log("Column change: ", props.workspace)
         props.workspace.columns.push(column);
     }
-})
+}, {deep: true})
 
 const hideTitleInput = () => {
     // Make sure there is an actual value in the input

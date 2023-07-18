@@ -11,7 +11,7 @@ const route = useRoute()
 
 const workspaceData = new Storage()
 let workspaces = await workspaceData.get("workspaces");
-let workspace = reactive({ name: "", id: "" })
+let workspace = reactive({ name: "", id: "", columns: [] })
 
 // This is really just for debugging but might come in handy later
 workspaceData.watch({

@@ -8,7 +8,7 @@
     import * as _ from "lodash-es"
 
     const workspaceData = new Storage()
-    const workspaces = await workspaceData.get("workspaces");
+    const workspaces = ref(await workspaceData.get("workspaces"));
     const workspace = reactive({ name: "", id: "", columns: [] })
     const updateColumns = ref(Date.now())
 
@@ -33,23 +33,25 @@
         }
 
         // Make sure we have a workspaces array to work with
-        if (!workspaces) {
+        if (!workspaces.value) {
             await workspaceData.set("workspaces", []);
+            workspaces.value = await workspaceData.get("workspaces");
         }
 
         // Check if our workspace exists
-        const workspaceObject = _.find(workspaces, {id: route.params.id})
-        const workspacesIndex = _.indexOf(workspaces, workspaceObject);
+        const workspaceObject = _.find(workspaces.value, {id: route.params.id})
+        const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
 
         // We have it. Let's set up our reactive variables
         if(workspacesIndex > -1) {
-            workspace.name = workspaceObject.name
-            workspace.id = workspaceObject.id
+            Object.entries(workspace).forEach(_workspace => {
+                const index = _.head(_workspace)
+                workspace[index] = workspaceObject[index]
+            })
+            console.log("Workspace bootstrapped: ", workspace)
         } else {
             redirectToCreateWorkspace()
         }
-
-        console.log(workspace)
 
         updateColumns.value = Date.now();
     }
@@ -60,7 +62,6 @@
         const workspacesIndex = _.indexOf(workspaces, workspaceObject);
 
         if(workspacesIndex > -1) {
-            console.log(workspaces[workspacesIndex])
             workspaces[workspacesIndex] = workspace
             await workspaceData.set(`workspaces`, workspaces)
         }
@@ -72,7 +73,7 @@
     // Watch for changes to our workspace columns
     watch(() => workspace.columns, async (columns) => {
         await updateWorkspace()
-    })
+    }, {deep: true})
 
     // Watch for our workspace id to change so that we can update the view
     watch(() => route.params.id, async (toParams, prevParams) => {
