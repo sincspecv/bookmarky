@@ -15,8 +15,14 @@
 
   // Watch for changes and update the menu if necessary
   watch(() => route.params.id, async (toParams, prevParams) => {
-      let renderFlag: boolean = false;
+      // Clear our active workspace so that we don't get stuck on a single
+      // workspace view. This will be re-set when we load a new workspace.
+      const activeWorkspace = await workspaceData.get("activeWorkspace");
+      if(!!activeWorkspace) {
+          await workspaceData.set("activeWorkspace", false)
+      }
 
+      let renderFlag: boolean = false;
       if(route.query.hasOwnProperty("render")) {
           renderFlag = !!route.query.render;
       }

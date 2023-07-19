@@ -33,6 +33,13 @@ if(!!workspaceObject) {
     router.push({name: "workspace", params: {id: workspaceObject.id}, replace: true})
 }
 
+// Check for an already active workspace
+const activeWorkspace = await workspaceData.get("activeWorkspace");
+if(!!activeWorkspace) {
+    router.replace({name: "workspace", params: {id: activeWorkspace.id}})
+
+}
+
 // Set our focus on the input on initial load
 const workspaceNameInput = ref(null);
 onMounted(() => {
@@ -53,8 +60,10 @@ const addWorkspace = async () => {
     // Update our workspace in storage
     workspaces.push(workspace);
 
-    await workspaceData.set(`workspaces`, workspaces)
+    workspaceData.set(`workspaces`, workspaces)
         .then(() => {
+            // Set as active workspace
+            workspaceData.set(`activeWorkspace`, workspace)
             router.push({name: "workspace", params: {id: workspace.id}, replace: true})
         })
 }
