@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import * as browser from "webextension-polyfill"
-import { reactive, ref, onMounted } from "vue"
+import { reactive, ref, onMounted, nextTick } from "vue"
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 import { v4 as uuidv4 } from "uuid"
 import { Storage } from "@plasmohq/storage"
@@ -17,7 +17,6 @@ const browserTabs = ref(await browser.tabs.query({currentWindow: true, url: ["ht
 
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     browserTabs.value = await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "file://*/*"]});
-    console.log(browserTabs.value)
 })
 
 // Collect our props from the parent component
@@ -85,13 +84,14 @@ const updateColumn = () => {
     hideTitleInput()
 }
 
-const showTitleInput = () => {
+const showTitleInput = async () => {
     showInput.value = true;
 
     /**
      * TODO: Fix error when trying to focus on input
      */
-    // titleInput.value.focus();
+    await nextTick()
+    titleInput.value.focus();
 }
 
 const hideTitleInput = () => {
@@ -128,13 +128,17 @@ const closeAddLinkModal = () => {
 }
 
 // Add a link from the selection of tabs
-const addTabLink = (tab = {}) => {
+const addTabLink = async (tab = {}) => {
+    const html = await fetch(tab.url).then(response => response.text())
+    const $ = cheerio.load(html);
+    const description = $('meta[name*="description"]').attr('content')
+
     const link = {
         id: uuidv4(),
         title: tab.title,
         url: tab.url,
         favIconUrl: tab.favIconUrl,
-        description: "",
+        description: !!description ? description : "",
         createdOn: Date.now(),
     }
 
@@ -158,10 +162,6 @@ const addTextLink = async () => {
             textLink.favIconUrl = `https://${baseURL}${textLink.favIconUrl}`
         }
 
-        console.log("Title: ", textLink.title)
-        console.log("Meta Description: ", textLink.description)
-        console.log("Favicon: ", textLink.favIconUrl)
-
         const link = {
             id: uuidv4(),
             title: textLink.title,
@@ -170,7 +170,7 @@ const addTextLink = async () => {
             description: textLink.description,
             createdOn: Date.now(),
         }
-        
+
         column.links.push(link);
         emits('update', props.workspace)
         closeAddLinkModal()
@@ -202,7 +202,7 @@ const removeLink = (id: string) => {
                       <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
                     </label>
                     <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
-                      <li><a @click="showTitleInput"><font-awesome-icon icon="far fa-edit" role="button" :aria-controls="`column-title-${column.id}`"></font-awesome-icon> Rename</a></li>
+                      <li><a @click="showTitleInput" class="handle-focus"><font-awesome-icon icon="far fa-edit" role="button" :aria-controls="`column-title-${column.id}`"></font-awesome-icon> Rename</a></li>
                       <li><a @click="removeColumn()" role="button" :aria-controls="column.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
                     </ul>
                 </div>

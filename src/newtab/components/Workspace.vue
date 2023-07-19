@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { reactive, watch, ref } from "vue"
+    import { reactive, watch, ref, onMounted, nextTick } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
@@ -12,8 +12,26 @@
     const workspace = reactive({ name: "", id: "", columns: [] })
     const updateColumns = ref(Date.now())
 
+    const workspaceNameInput = ref(null);
+    const showWorkspaceNameInput = ref(false);
+
     const router = useRouter()
     const route = useRoute()
+
+    // Make our dropdowns go away after clicking a menu item
+    onMounted(() => {
+        const dropdowns = document.querySelectorAll(".dropdown");
+        dropdowns.forEach(_dropdown => {
+            const menu = _dropdown.querySelector('.dropdown-content')
+            menu.addEventListener('click', (e) => {
+                // Make sure focus isn't already being handled by another function/method
+                if(!e.target.classList.contains('handle-focus')) {
+                    // Remove focus so that the dropdown disappears
+                    document.activeElement.blur()
+                }
+            })
+        })
+    })
 
     /**
      * Redirect to the create workspace view
@@ -78,6 +96,16 @@
         }
     }
 
+    const focusWorkspaceNameInput = async () => {
+        await nextTick()
+        workspaceNameInput.value.focus()
+    }
+
+    const updateWorkspaceName = async () => {
+        await updateWorkspace()
+        showWorkspaceNameInput.value = false
+    }
+
     // Load our workspace
     getWorkspace();
 
@@ -95,7 +123,43 @@
 
 <template>
     <div class="h-full flex flex-col">
-        <h1 class="text-3xl my-10">{{workspace.name}}</h1>
+        <div class="flex flex-row justify-start gap-10 content-center items-center w-full">
+            <div class="dropdown dropdown-right h-auto"  v-if="!showWorkspaceNameInput">
+                <label
+                    tabindex="0"
+                    class="btn btn-ghost hover:btn-neutral btn-sm opacity-25 hover:opacity-100"
+                >
+                    <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
+                </label>
+                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
+                    <li><a @click="showWorkspaceNameInput = !showWorkspaceNameInput; focusWorkspaceNameInput();" class="handle-focus"><font-awesome-icon icon="far fa-edit" role="button"></font-awesome-icon> Rename</a></li>
+                    <li><a @click="" role="button" title="Delete workspace"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
+                </ul>
+            </div>
+
+            <!-- Workspace Title -->
+            <h1 class="text-3xl my-10" v-if="!showWorkspaceNameInput">{{workspace.name}}</h1>
+            <!-- /Workspace Title -->
+
+            <form class="relative my-4 w-full max-w-md" v-if="!!showWorkspaceNameInput" @submit.prevent="updateWorkspaceName">
+                <label :for="`workspace-name-${workspace.id}`" class="sr-only">Workspace Name</label>
+                <input
+                    ref="workspaceNameInput"
+                    :name="`workspace-name-${workspace.id}`"
+                    :id="`workspace-name-${workspace.id}`"
+                    class="input input-md input-bordered input-info w-full"
+                    placeholder="Workspace Name"
+                    v-model="workspace.name"
+                />
+                <button
+                    v-if="!!workspace.name"
+                    type="submit"
+                    class="absolute right-0 btn btn-ghost opacity-25 hover:opacity-100 hover:z-[1]"
+                >
+                    <font-awesome-icon icon="fas fa-sign-in-alt"></font-awesome-icon>
+                </button>
+            </form>
+        </div>
         <div v-if="!!workspace.id" class="flex-1">
             <div :key="updateColumns" class="grid grid-cols-auto h-full py-10">
                 <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-for="column in workspace.columns" :column="column"></WorkspaceColumn>

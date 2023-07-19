@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import type { App } from "vue";
+import type { App } from "vue"
 
 // Plugins
 import * as VueRouter from "vue-router"
@@ -98,7 +98,7 @@ defineOptions({
 <template>
     <div class="app-container h-full">
         <Suspense>
-            <main id="main" class="h-full">
+            <main id="main" class="h-full py-10">
                 <Menu></Menu>
                 <div class="container mx-auto h-full">
                     <router-view></router-view>
