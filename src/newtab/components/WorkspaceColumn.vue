@@ -47,7 +47,7 @@ if(!!props.column) {
         column[index] = props.column[index]
     })
 
-    showInput.value = false;
+    showInput.value = !column.title;
 }
 
 /**
@@ -190,8 +190,9 @@ const removeLink = (id: string) => {
 </script>
 
 <template>
-    <!-- Column Title -->
+    <!-- Column -->
     <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
+        <!-- Column Title -->
         <div class="text-xl relative p-10">
             <div class="flex flex-row justify-between content-center" v-if="!showInput">
                 <h2>{{column.title}}</h2>
@@ -248,6 +249,7 @@ const removeLink = (id: string) => {
         </div>
         <!-- /Links Container -->
     </div>
+    <!-- /Column -->
 
     <!-- Add Link Modal -->
     <dialog :id="`${column.id}_add_link`" class="modal" v-if="!!column.id" ref="addLinkModal">

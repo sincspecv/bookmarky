@@ -6,6 +6,7 @@
     import { v4 as uuidv4 } from "uuid"
     import { Storage } from "@plasmohq/storage"
     import * as _ from "lodash-es"
+    import WorkspaceColumnLink from "~newtab/components/WorkspaceColumnLink.vue";
 
     const workspaceData = new Storage()
     const workspaces = ref(await workspaceData.get("workspaces"));
@@ -136,6 +137,10 @@
         deleteWorkspaceModal.value.close()
     }
 
+    const addColumn = () => {
+        workspace.columns.push({title: "", id: uuidv4(), links: []})
+    }
+
     // Load our workspace
     getWorkspace();
 
@@ -191,9 +196,20 @@
             </form>
         </div>
         <div v-if="!!workspace.id" class="flex-1">
-            <div :key="updateColumns" class="grid grid-cols-auto h-full py-10">
+            <div :key="updateColumns" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
                 <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-for="column in workspace.columns" :column="column"></WorkspaceColumn>
                 <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-if="!workspace.columns.length"></WorkspaceColumn>
+                <!-- Add Column -->
+                <div
+                    v-if="workspace.columns.length"
+                    @click="addColumn"
+                    class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
+                    role="button"
+                >
+                    <font-awesome-icon icon="fas fa-plus" class="mx-auto"></font-awesome-icon>
+                    <span class="sr-only">Add new column</span>
+                </div>
+                <!-- /Add Column -->
             </div>
         </div>
     </div>
