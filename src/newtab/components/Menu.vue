@@ -15,8 +15,13 @@
 
   // Watch for changes and update the menu if necessary
   watch(() => route.params.id, async (toParams, prevParams) => {
+      let renderFlag: boolean = false;
+
+      if(route.query.hasOwnProperty("render")) {
+          renderFlag = !!route.query.render;
+      }
       // Only update if we're coming from the add a workspace route
-      if(!!toParams && prevParams === undefined) {
+      if((!!toParams && prevParams === undefined) || renderFlag) {
           workspaces = await workspaceData.get("workspaces");
 
           // Update the key to force Vue to reload component

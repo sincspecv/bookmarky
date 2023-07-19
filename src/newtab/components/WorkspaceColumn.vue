@@ -15,6 +15,7 @@ const route = useRoute()
 // Get our browser tabs
 const browserTabs = ref(await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "file://*/*"]}))
 
+// Keep our tab list updated when they change
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     browserTabs.value = await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "file://*/*"]});
 })

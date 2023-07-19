@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { reactive, watch, ref, onMounted, nextTick } from "vue"
+    import { reactive, watch, ref, onMounted, nextTick, getCurrentInstance } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
@@ -14,6 +14,7 @@
 
     const workspaceNameInput = ref(null);
     const showWorkspaceNameInput = ref(false);
+    const deleteWorkspaceModal = ref(null);
 
     const router = useRouter()
     const route = useRoute()
@@ -106,6 +107,31 @@
         showWorkspaceNameInput.value = false
     }
 
+    const deleteWorkspace = async (showModal: boolean = true) => {
+        if(showModal) {
+            deleteWorkspaceModal.value.showModal()
+        } else {
+            // Check if our workspace exists
+            const workspaceObject = _.find(workspaces.value, {id: route.params.id})
+            const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
+
+            // Remove it
+            if(workspacesIndex > -1) {
+                workspaces.value.splice(workspacesIndex, 1)
+                await workspaceData.set(`workspaces`, workspaces.value)
+
+                // redirectToCreateWorkspace()
+                router.replace({name: "create-workspace", query: {render: true}})
+            }
+
+            closeDeleteWorkspaceModal()
+        }
+    }
+
+    const closeDeleteWorkspaceModal = () => {
+        deleteWorkspaceModal.value.close()
+    }
+
     // Load our workspace
     getWorkspace();
 
@@ -133,7 +159,7 @@
                 </label>
                 <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
                     <li><a @click="showWorkspaceNameInput = !showWorkspaceNameInput; focusWorkspaceNameInput();" class="handle-focus"><font-awesome-icon icon="far fa-edit" role="button"></font-awesome-icon> Rename</a></li>
-                    <li><a @click="" role="button" title="Delete workspace"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
+                    <li><a @click="deleteWorkspace" role="button" title="Delete workspace"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
                 </ul>
             </div>
 
@@ -167,6 +193,23 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Workspace Modal -->
+    <dialog :id="`${workspace.id}_delete_prompt`" class="modal" v-if="!!workspace.id" ref="deleteWorkspaceModal">
+        <div class="modal-box w-full max-w-max">
+            <h2 class="font-bold text-lg">Are you sure?</h2>
+            <div class="alert alert-warning my-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <span>WARNING: This workspace will be deleted permanently and all data will be lost!</span>
+            </div>
+
+            <div class="modal-action">
+                <button class="btn btn-info btn-md" @click="closeDeleteWorkspaceModal">Cancel</button>
+                <button type="submit" class="btn btn-error btn-md" @click="deleteWorkspace(false)">Delete Workspace</button>
+            </div>
+        </div>
+    </dialog>
+    <!-- /Delete Workspace Modal -->
 </template>
 
 <style scoped>
