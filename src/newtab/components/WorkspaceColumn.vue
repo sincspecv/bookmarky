@@ -8,6 +8,13 @@ import * as _ from "lodash-es"
 import {useRoute, useRouter} from "vue-router";
 import WorkspaceColumnLink from "./WorkspaceColumnLink"
 import * as cheerio from "cheerio"
+import isURL from "validator/es/lib/isURL"
+
+const isURLOptions = {
+    protocols: ['http', 'https', 'file'],
+    require_protocol: true,
+    allow_underscores: true,
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -150,6 +157,10 @@ const addTabLink = async (tab = {}) => {
 
 // Add a manually entered URL to the link list
 const addTextLink = async () => {
+    textLink.url = isURL(textLink.url, isURLOptions) ? textLink.url : ""
+
+    console.log(textLink.url)
+
     if (!!textLink.url) {
         const html = await fetch(textLink.url).then(response => response.text())
         const $ = cheerio.load(html);
@@ -158,7 +169,7 @@ const addTextLink = async () => {
         textLink.description = $('meta[name*="description"]').attr('content')
         textLink.favIconUrl = $('link[rel*="icon"]').attr('href')
 
-        if(!textLink.favIconUrl.startsWith("http")) {
+        if(typeof textLink.favIconUrl === "string" && !textLink.favIconUrl.startsWith("http")) {
             const baseURL = textLink.url.split("/")[2]
             textLink.favIconUrl = `https://${baseURL}${textLink.favIconUrl}`
         }
@@ -195,7 +206,7 @@ const removeLink = (id: string) => {
         <!-- Column Title -->
         <div class="text-xl relative p-10">
             <div class="flex flex-row justify-between content-center" v-if="!showInput">
-                <h2>{{column.title}}</h2>
+                <h2 class="font-medium">{{column.title}}</h2>
                 <div class="dropdown dropdown-bottom dropdown-end h-full">
                     <label
                       tabindex="0"

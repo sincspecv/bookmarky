@@ -71,7 +71,7 @@ const addWorkspace = async () => {
 
 <template>
     <div>
-        <h1 class="text-3xl my-10">Add a New Workspace</h1>
+        <h1 class="text-3xl my-10 font-medium">Add a New Workspace</h1>
         <div v-if="!workspace.id" class="rounded-box drop-shadow-md bg-neutral p-20">
             <form @submit.prevent="addWorkspace" class="flex flex-col w-full gap-10" x-data="FormHandler">
                 <label for="workspaceName" class="text-base">

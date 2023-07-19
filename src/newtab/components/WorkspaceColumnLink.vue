@@ -2,12 +2,20 @@
 import * as browser from "webextension-polyfill"
 import { computed, onMounted, ref } from "vue"
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
+import isURL from "validator/es/lib/isURL"
 
 const emits = defineEmits(['remove'])
 
 const props = defineProps(['link'])
 const currentTab = await browser.tabs.getCurrent();
 const openTabs = ref(await browser.tabs.query({currentWindow: true, url: [props.link.url]}))
+const hasOpenTabs = computed(() => !!openTabs.value.length)
+
+const isURLOptions = {
+    protocols: ['http', 'https', 'file'],
+    require_protocol: true,
+    allow_underscores: true,
+}
 
 // Keep our open tab list updated when they change
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -37,10 +45,6 @@ const discardTabs = async () => {
         })
     }
 }
-
-const hasOpenTabs = computed(() => {
-    return !!openTabs.value.length
-})
 
 // Make our dropdowns go away after clicking a menu item
 onMounted(() => {
