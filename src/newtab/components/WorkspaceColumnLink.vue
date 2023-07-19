@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import * as browser from "webextension-polyfill"
-import { reactive, ref, onMounted } from "vue"
+import { computed, onMounted, ref } from "vue"
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 
 const emits = defineEmits(['remove'])
 
 const props = defineProps(['link'])
 const currentTab = await browser.tabs.getCurrent();
+const openTabs = ref(await browser.tabs.query({currentWindow: true, url: [props.link.url]}))
+
+// Keep our open tab list updated when they change
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    openTabs.value = await browser.tabs.query({currentWindow: true, url: [props.link.url]})
+})
 
 const openLink = () => {
     browser.tabs.update(currentTab.id,{
@@ -23,6 +29,34 @@ const openLinkInNewTab = () => {
 const removeLink = () => {
     emits('remove', props.link.id)
 }
+
+const discardTabs = async () => {
+    if(!!openTabs.value.length) {
+        openTabs.value.forEach(tab => {
+            console.log(`Discarded tab ${tab.id}`)
+        })
+    }
+}
+
+const hasOpenTabs = computed(() => {
+    return !!openTabs.value.length
+})
+
+// Make our dropdowns go away after clicking a menu item
+onMounted(() => {
+    const dropdowns = document.querySelectorAll(".dropdown");
+    dropdowns.forEach(_dropdown => {
+        const menu = _dropdown.querySelector('.dropdown-content')
+        menu.addEventListener('click', (e) => {
+            // Make sure focus isn't already being handled by another function/method
+            if(!e.target.classList.contains('handle-focus')) {
+                // Remove focus so that the dropdown disappears
+                document.activeElement.blur()
+            }
+        })
+    })
+})
+
 </script>
 
 <template>
@@ -51,6 +85,7 @@ const removeLink = () => {
                 <ul tabindex="0" class="dropdown-content z-10 menu p-2 shadow bg-base-100 rounded-box w-48">
                     <li><a @click.stop="openLinkInNewTab"><font-awesome-icon icon="fas fa-external-link-alt"></font-awesome-icon> Open in new tab</a></li>
                     <li><a @click="removeLink" role="button" :aria-controls="props.link.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
+                    <li  v-if="hasOpenTabs"><a @click="discardTabs" role="button" :aria-controls="props.link.id" title="Put tab to sleep"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Sleep open tabs</a></li>
                 </ul>
             </div>
         </div>
