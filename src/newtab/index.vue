@@ -6,6 +6,7 @@ import type { App } from "vue"
 import * as VueRouter from "vue-router"
 
 // Components
+import Menu from "~newtab/components/Menu.vue";
 import Workspace from "./components/Workspace"
 import CreateWorkspace from "./components/CreateWorkspace"
 
@@ -41,11 +42,6 @@ import { faTiktok } from '@fortawesome/free-brands-svg-icons'
 import { faInstagram } from '@fortawesome/free-brands-svg-icons'
 import { faLinkedin } from '@fortawesome/free-brands-svg-icons'
 import { faYoutube } from '@fortawesome/free-brands-svg-icons'
-import Menu from "~newtab/components/Menu.vue";
-
-const workspaceModel = {
-    id: "your-mpm"
-}
 
 library.add(faBars)
 library.add(faCog)

@@ -37,7 +37,6 @@ if(!!workspaceObject) {
 const activeWorkspace = await workspaceData.get("activeWorkspace");
 if(!!activeWorkspace) {
     router.replace({name: "workspace", params: {id: activeWorkspace.id}})
-
 }
 
 // Set our focus on the input on initial load

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-    import { reactive, watch, ref, onMounted, nextTick, getCurrentInstance } from "vue"
+    import { reactive, watch, ref, onMounted, nextTick } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
     import { v4 as uuidv4 } from "uuid"
     import { Storage } from "@plasmohq/storage"
     import * as _ from "lodash-es"
-    import WorkspaceColumnLink from "~newtab/components/WorkspaceColumnLink.vue";
 
     const workspaceData = new Storage()
     const workspaces = ref(await workspaceData.get("workspaces"));
@@ -212,24 +211,24 @@
                 <!-- /Add Column -->
             </div>
         </div>
+
+        <!-- Delete Workspace Modal -->
+        <dialog :id="`${workspace.id}_delete_prompt`" class="modal" v-if="!!workspace.id" ref="deleteWorkspaceModal">
+            <div class="modal-box w-full max-w-max">
+                <h2 class="font-bold text-lg">Are you sure?</h2>
+                <div class="alert alert-warning my-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <span class="font-bold">WARNING: This workspace will be deleted permanently and all data will be lost!</span>
+                </div>
+
+                <div class="modal-action">
+                    <button class="btn btn-info btn-md" @click="closeDeleteWorkspaceModal">Cancel</button>
+                    <button type="submit" class="btn btn-error btn-md" @click="deleteWorkspace(false)">Delete Workspace</button>
+                </div>
+            </div>
+        </dialog>
+        <!-- /Delete Workspace Modal -->
     </div>
-
-    <!-- Delete Workspace Modal -->
-    <dialog :id="`${workspace.id}_delete_prompt`" class="modal" v-if="!!workspace.id" ref="deleteWorkspaceModal">
-        <div class="modal-box w-full max-w-max">
-            <h2 class="font-bold text-lg">Are you sure?</h2>
-            <div class="alert alert-warning my-10">
-                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                <span class="font-bold">WARNING: This workspace will be deleted permanently and all data will be lost!</span>
-            </div>
-
-            <div class="modal-action">
-                <button class="btn btn-info btn-md" @click="closeDeleteWorkspaceModal">Cancel</button>
-                <button type="submit" class="btn btn-error btn-md" @click="deleteWorkspace(false)">Delete Workspace</button>
-            </div>
-        </div>
-    </dialog>
-    <!-- /Delete Workspace Modal -->
 </template>
 
 <style scoped>
