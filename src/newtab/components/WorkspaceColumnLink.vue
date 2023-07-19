@@ -3,6 +3,8 @@ import * as browser from "webextension-polyfill"
 import { reactive, ref, onMounted } from "vue"
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 
+const emits = defineEmits(['remove'])
+
 const props = defineProps(['link'])
 const currentTab = await browser.tabs.getCurrent();
 
@@ -16,6 +18,10 @@ const openLinkInNewTab = () => {
     browser.tabs.create({
         url: props.link.url
     })
+}
+
+const removeLink = () => {
+    emits('remove', props.link.id)
 }
 </script>
 
@@ -44,7 +50,7 @@ const openLinkInNewTab = () => {
                 </label>
                 <ul tabindex="0" class="dropdown-content z-10 menu p-2 shadow bg-base-100 rounded-box w-48">
                     <li><a @click.stop="openLinkInNewTab"><font-awesome-icon icon="fas fa-external-link-alt"></font-awesome-icon> Open in new tab</a></li>
-                    <li><a @click="console.log('clicked')" role="button" :aria-controls="props.link.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
+                    <li><a @click="removeLink" role="button" :aria-controls="props.link.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
                 </ul>
             </div>
         </div>

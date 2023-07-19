@@ -138,6 +138,20 @@ const addTabLink = (tab = {}) => {
     emits('update', props.workspace)
     closeAddLinkModal();
 }
+
+const addTextLink = () => {
+    console.log("Add text link")
+}
+
+const removeLink = (id: string) => {
+    const linkObject = _.find(column.links, { id: id })
+    const linkIndex = _.indexOf(column.links, linkObject);
+
+    if(linkIndex > -1) {
+        column.links.splice(linkIndex, 1)
+        emits('update', props.workspace)
+    }
+}
 </script>
 
 <template>
@@ -183,7 +197,7 @@ const addTabLink = (tab = {}) => {
         <div class="relative overflow-y-scroll" style="height: calc(100% - 72px)">
             <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column.id">
                 <!-- Links -->
-                <WorkspaceColumnLink v-for="link in column.links" :link="link"/>
+                <WorkspaceColumnLink @remove="removeLink" v-for="link in column.links" :link="link"/>
                 <!-- /Links -->
                 <!-- Add Link Button -->
                 <a class="w-full btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
