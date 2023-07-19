@@ -35,6 +35,7 @@ import { faWindowClose } from '@fortawesome/free-regular-svg-icons'
 import { faMinusSquare } from '@fortawesome/free-regular-svg-icons'
 import { faPlusSquare } from '@fortawesome/free-regular-svg-icons'
 import { faEdit } from '@fortawesome/free-regular-svg-icons'
+import { faPauseCircle } from '@fortawesome/free-regular-svg-icons'
 import { faFacebookSquare } from '@fortawesome/free-brands-svg-icons'
 import { faTiktok } from '@fortawesome/free-brands-svg-icons'
 import { faInstagram } from '@fortawesome/free-brands-svg-icons'
@@ -64,6 +65,7 @@ library.add(faWindowClose)
 library.add(faMinusSquare)
 library.add(faPlusSquare)
 library.add(faEdit)
+library.add(faPauseCircle)
 library.add(faFacebookSquare)
 library.add(faTiktok)
 library.add(faInstagram)

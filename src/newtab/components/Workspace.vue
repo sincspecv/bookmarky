@@ -195,7 +195,7 @@
                 </button>
             </form>
         </div>
-        <div v-if="!!workspace.id" class="flex-1">
+        <div v-if="!!workspace.id" class="flex-1 overflow-y-auto">
             <div :key="updateColumns" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
                 <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-for="column in workspace.columns" :column="column"></WorkspaceColumn>
                 <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-if="!workspace.columns.length"></WorkspaceColumn>

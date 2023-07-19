@@ -83,9 +83,9 @@ onMounted(() => {
                     <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
                 </label>
                 <ul tabindex="0" class="dropdown-content z-10 menu p-2 shadow bg-base-100 rounded-box w-48">
-                    <li><a @click.stop="openLinkInNewTab"><font-awesome-icon icon="fas fa-external-link-alt"></font-awesome-icon> Open in new tab</a></li>
-                    <li><a @click="removeLink" role="button" :aria-controls="props.link.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
-                    <li  v-if="hasOpenTabs"><a @click="discardTabs" role="button" :aria-controls="props.link.id" title="Put tab to sleep"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Sleep open tabs</a></li>
+                    <li><a @click.stop="openLinkInNewTab"><font-awesome-icon icon="fas fa-external-link-alt" class="w-12"></font-awesome-icon> Open in new tab</a></li>
+                    <li><a @click="removeLink" role="button" :aria-controls="props.link.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"  class="w-12"></font-awesome-icon> Delete</a></li>
+                    <li  v-if="hasOpenTabs"><a @click="discardTabs" role="button" :aria-controls="props.link.id" title="Put tab to sleep"><font-awesome-icon icon="far fa-pause-circle" class="w-12"></font-awesome-icon> Sleep open tabs</a></li>
                 </ul>
             </div>
         </div>
