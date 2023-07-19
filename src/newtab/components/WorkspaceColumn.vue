@@ -7,6 +7,7 @@ import { Storage } from "@plasmohq/storage"
 import * as _ from "lodash-es"
 import {useRoute, useRouter} from "vue-router";
 import WorkspaceColumnLink from "./WorkspaceColumnLink"
+import * as cheerio from "cheerio"
 
 const router = useRouter()
 const route = useRoute()
@@ -33,6 +34,7 @@ if(!props.workspace) {
 // Init our element refs
 const titleInput = ref(null)
 const addLinkModal = ref(null)
+const textLink = reactive({url: "", title: "", description: "", favIconUrl: ""})
 
 // Init our column
 const column = reactive({title: "", id: "", links: []})
@@ -115,23 +117,25 @@ const removeColumn = () => {
     }
 }
 
+// Show the "Add A Link" modal
 const showAddLinkModal = () => {
     addLinkModal.value.showModal()
 }
 
+// Close the "Add A Link" modal
 const closeAddLinkModal = () => {
     addLinkModal.value.close()
 }
 
+// Add a link from the selection of tabs
 const addTabLink = (tab = {}) => {
-    console.log(tab)
     const link = {
         id: uuidv4(),
         title: tab.title,
         url: tab.url,
         favIconUrl: tab.favIconUrl,
+        description: "",
         createdOn: Date.now(),
-        updatedOn: Date.now()
     }
 
     column.links.push(link);
@@ -139,8 +143,38 @@ const addTabLink = (tab = {}) => {
     closeAddLinkModal();
 }
 
-const addTextLink = () => {
-    console.log("Add text link")
+// Add a manually entered URL to the link list
+const addTextLink = async () => {
+    if (!!textLink.url) {
+        const html = await fetch(textLink.url).then(response => response.text())
+        const $ = cheerio.load(html);
+
+        textLink.title = $('title').text()
+        textLink.description = $('meta[name*="description"]').attr('content')
+        textLink.favIconUrl = $('link[rel*="icon"]').attr('href')
+
+        if(!textLink.favIconUrl.startsWith("http")) {
+            const baseURL = textLink.url.split("/")[2]
+            textLink.favIconUrl = `https://${baseURL}${textLink.favIconUrl}`
+        }
+
+        console.log("Title: ", textLink.title)
+        console.log("Meta Description: ", textLink.description)
+        console.log("Favicon: ", textLink.favIconUrl)
+
+        const link = {
+            id: uuidv4(),
+            title: textLink.title,
+            url: textLink.url,
+            favIconUrl: textLink.favIconUrl,
+            description: textLink.description,
+            createdOn: Date.now(),
+        }
+        
+        column.links.push(link);
+        emits('update', props.workspace)
+        closeAddLinkModal()
+    }
 }
 
 const removeLink = (id: string) => {
@@ -219,7 +253,9 @@ const removeLink = (id: string) => {
         <div class="modal-box">
             <h2 class="font-bold text-lg">Add a link</h2>
             <p class="py-4">Select one of your open tabs below</p>
-            <div class="max-h-49 w-full carousel carousel-vertical rounded-md">
+
+            <!-- Tab List -->
+            <div class="max-h-48 w-full carousel carousel-vertical rounded-md">
                 <button
                     v-for="tab in browserTabs"
                     @click="addTabLink(tab)"
@@ -236,9 +272,25 @@ const removeLink = (id: string) => {
                     </div>
                 </button>
             </div>
+            <!-- /Tab List -->
+
+            <div class="mt-10">
+                <label for="linkUrl" class="block mb-5">
+                    Or enter a URL
+                </label>
+                <input
+                    type="text"
+                    name="linkUrl"
+                    id="linkUrl"
+                    placeholder="Enter URL"
+                    v-model="textLink.url"
+                    class="input input-bordered w-full"
+                />
+            </div>
+
             <div class="modal-action">
                 <button class="btn btn-neutral btn-sm" @click="closeAddLinkModal">Cancel</button>
-                <button type="submit" class="btn btn-primary btn-sm" @click="closeAddLinkModal">Add</button>
+                <button type="submit" class="btn btn-primary btn-sm" @click="addTextLink">Add</button>
             </div>
         </div>
     </dialog>
