@@ -34,7 +34,7 @@ const removeLink = () => {
         <div class="flex justify-start flex-nowrap gap-5 max-w-full" @click.prevent.self="openLink">
             <div class="avatar" @click.prevent="openLink">
                 <figure class="w-20 rounded" v-if="props.link.favIconUrl">
-                    <img :src="props.link.favIconUrl" />
+                    <img class="!object-contain" :src="props.link.favIconUrl" />
                 </figure>
             </div>
             <div class="flex flex-col text-left overflow-hidden"  @click.prevent="openLink">

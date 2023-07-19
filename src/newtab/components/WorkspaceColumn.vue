@@ -219,7 +219,7 @@ const removeLink = (id: string) => {
         <div class="modal-box">
             <h2 class="font-bold text-lg">Add a link</h2>
             <p class="py-4">Select one of your open tabs below</p>
-            <div class="h-45 w-full carousel carousel-vertical rounded-md">
+            <div class="max-h-49 w-full carousel carousel-vertical rounded-md">
                 <button
                     v-for="tab in browserTabs"
                     @click="addTabLink(tab)"
