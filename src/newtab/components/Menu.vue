@@ -5,7 +5,7 @@
   import { v4 as uuidv4 } from "uuid"
 
   // Icons
-  import {PencilSquareIcon, PlusIcon} from '@heroicons/vue/24/solid'
+  import { PlusIcon } from '@heroicons/vue/24/solid'
 
   const router = useRouter()
   const route = useRoute()
@@ -44,7 +44,7 @@
   <div class="container mx-auto">
       <div class="join rounded-box gap-[4px] py-10" role="menu" :key="updateKey">
           <router-link v-for="workspace in workspaces" :to="`/workspace/${workspace.id}`" class="join-item btn rounded-btn" role="menuitem">{{workspace.name}}</router-link>
-          <router-link to="/" class="join-item btn btn-neutral rounded-btn"><PlusIcon class="w-16" /><span class="sr-only">Add new workspace</span></router-link>
+          <router-link to="/" class="join-item btn btn-neutral rounded-btn"><PlusIcon class="stroke-current stroke-1 w-16" /><span class="sr-only">Add new workspace</span></router-link>
       </div>
   </div>
 </template>

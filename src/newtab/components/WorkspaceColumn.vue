@@ -12,9 +12,10 @@ import isURL from "validator/es/lib/isURL"
 // Icons
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'
-import { PencilSquareIcon } from '@heroicons/vue/24/solid'
-import { TrashIcon } from '@heroicons/vue/24/solid'
-import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/solid'
+import { PencilSquareIcon } from '@heroicons/vue/24/outline'
+import { TrashIcon } from '@heroicons/vue/24/outline'
+import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
+import { ExclamationCircleIcon } from '@heroicons/vue/24/outline'
 
 const isURLOptions = {
     protocols: ['http', 'https', 'file'],
@@ -43,6 +44,9 @@ const emits = defineEmits(['update'])
 if(!props.workspace) {
     router.push({name: "create-workspace", replace: true})
 }
+
+// Error object
+const errorMessages = reactive({textLinkInput: ""})
 
 // Init our element refs
 const titleInput = ref(null)
@@ -138,6 +142,8 @@ const showAddLinkModal = () => {
 
 // Close the "Add A Link" modal
 const closeAddLinkModal = () => {
+    textLink.url = ""
+    errorMessages.textLinkInput = ""
     addLinkModal.value.close()
 }
 
@@ -163,36 +169,36 @@ const addTabLink = async (tab = {}) => {
 
 // Add a manually entered URL to the link list
 const addTextLink = async () => {
-    textLink.url = isURL(textLink.url, isURLOptions) ? textLink.url : ""
-
-    console.log(textLink.url)
-
-    if (!!textLink.url) {
-        const html = await fetch(textLink.url).then(response => response.text())
-        const $ = cheerio.load(html);
-
-        textLink.title = $('title').text()
-        textLink.description = $('meta[name*="description"]').attr('content')
-        textLink.favIconUrl = $('link[rel*="icon"]').attr('href')
-
-        if(typeof textLink.favIconUrl === "string" && !textLink.favIconUrl.startsWith("http")) {
-            const baseURL = textLink.url.split("/")[2]
-            textLink.favIconUrl = `https://${baseURL}${textLink.favIconUrl}`
-        }
-
-        const link = {
-            id: uuidv4(),
-            title: textLink.title,
-            url: textLink.url,
-            favIconUrl: textLink.favIconUrl,
-            description: textLink.description,
-            createdOn: Date.now(),
-        }
-
-        column.links.push(link);
-        emits('update', props.workspace)
-        closeAddLinkModal()
+    // Make sure we have a valid URL
+    if(!isURL(textLink.url, isURLOptions)) {
+        errorMessages.textLinkInput = "Please enter a valid URL"
+        return false;
     }
+
+    const html = await fetch(textLink.url).then(response => response.text())
+    const $ = cheerio.load(html);
+
+    textLink.title = $('title').text()
+    textLink.description = $('meta[name*="description"]').attr('content')
+    textLink.favIconUrl = $('link[rel*="icon"]').attr('href')
+
+    if(typeof textLink.favIconUrl === "string" && !textLink.favIconUrl.startsWith("http")) {
+        const baseURL = textLink.url.split("/")[2]
+        textLink.favIconUrl = `https://${baseURL}${textLink.favIconUrl}`
+    }
+
+    const link = {
+        id: uuidv4(),
+        title: textLink.title,
+        url: textLink.url.replace(/\/?$/, '/'), // Make sure we have a trailing slash to make the browser API happy later
+        favIconUrl: textLink.favIconUrl,
+        description: textLink.description,
+        createdOn: Date.now(),
+    }
+
+    column.links.push(link);
+    emits('update', props.workspace)
+    closeAddLinkModal()
 }
 
 const removeLink = (id: string) => {
@@ -258,7 +264,7 @@ const removeLink = (id: string) => {
                    role="button"
                    @click="showAddLinkModal"
                 >
-                    <PlusIcon class="w-32 mx-auto" />
+                    <PlusIcon class="stroke-current stroke-0 w-32 mx-auto" />
                     <span class="sr-only">Add new link</span>
                 </a>
                 <!-- /Add Link Button -->
@@ -306,6 +312,7 @@ const removeLink = (id: string) => {
                     v-model="textLink.url"
                     class="input input-bordered w-full"
                 />
+                <p class="text-error text-md p-2 flex flex-row justify-start" role="alert" v-show="!!errorMessages.textLinkInput"><span class="inline float-left" v-if="!!errorMessages.textLinkInput"><ExclamationCircleIcon class="inline float-left mr-[4px] w-12" /> ERROR:&nbsp;</span> {{errorMessages.textLinkInput}}</p>
             </div>
 
             <div class="modal-action">

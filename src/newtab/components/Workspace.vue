@@ -9,9 +9,9 @@
     // Icons
     import { PlusIcon } from '@heroicons/vue/24/solid'
     import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'
-    import { PencilSquareIcon } from '@heroicons/vue/24/solid'
-    import { TrashIcon } from '@heroicons/vue/24/solid'
-    import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/solid'
+    import { PencilSquareIcon } from '@heroicons/vue/24/outline'
+    import { TrashIcon } from '@heroicons/vue/24/outline'
+    import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
 
     const workspaceData = new Storage()
     const workspaces = ref(await workspaceData.get("workspaces"));
@@ -211,7 +211,7 @@
                     class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
                     role="button"
                 >
-                    <PlusIcon class="mx-auto w-36" />
+                    <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
                     <span class="sr-only">Add new column</span>
                 </div>
                 <!-- /Add Column -->

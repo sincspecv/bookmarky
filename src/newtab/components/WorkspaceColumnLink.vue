@@ -4,10 +4,10 @@ import { computed, onMounted, ref } from "vue"
 import isURL from "validator/es/lib/isURL"
 
 // Icons
-import { TrashIcon } from '@heroicons/vue/24/solid'
-import { PauseCircleIcon } from '@heroicons/vue/24/solid'
+import { TrashIcon } from '@heroicons/vue/24/outline'
+import { PauseCircleIcon } from '@heroicons/vue/24/outline'
 import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'
-import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline'
 
 const emits = defineEmits(['remove'])
 
@@ -94,7 +94,7 @@ onMounted(() => {
                 <ul tabindex="0" class="dropdown-content z-10 menu p-2 shadow bg-base-100 rounded-box w-48">
                     <li><a @click.stop="openLinkInNewTab"><ArrowTopRightOnSquareIcon class="w-12" /> Open in new tab</a></li>
                     <li><a @click="removeLink" role="button" :aria-controls="props.link.id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
-                    <li  v-if="hasOpenTabs"><a @click="discardTabs" role="button" :aria-controls="props.link.id" title="Put tab to sleep"><PauseCircleIcon class="w-12" /> Sleep open tabs</a></li>
+                    <li  v-if="hasOpenTabs"><a @click="discardTabs" role="button" :aria-controls="props.link.id" title="Put tabs with this URL loaded to sleep"><PauseCircleIcon class="w-12" /> Sleep open tabs</a></li>
                 </ul>
             </div>
         </div>
