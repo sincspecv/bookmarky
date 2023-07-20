@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import * as browser from "webextension-polyfill"
 import { computed, onMounted, ref } from "vue"
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 import isURL from "validator/es/lib/isURL"
+
+// Icons
+import { TrashIcon } from '@heroicons/vue/24/solid'
+import { PauseCircleIcon } from '@heroicons/vue/24/solid'
+import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid'
 
 const emits = defineEmits(['remove'])
 
@@ -67,9 +72,9 @@ onMounted(() => {
     <!-- Link -->
     <button
         @click.prevent.self="openLink"
-        class="bg-neutral hover:drop-shadow-lg min-w-0 p-10 rounded-md flex flex-col flex-nowrap justify-start items-center gap-5 hover:z-10"
+        class="bg-neutral hover:drop-shadow-lg w-full min-w-0 p-10 rounded-md flex flex-col flex-nowrap justify-start items-center gap-5 hover:z-10"
     >
-        <div class="flex justify-start flex-nowrap gap-5 max-w-full" @click.prevent.self="openLink">
+        <div class="flex justify-start flex-nowrap gap-5 w-full max-w-full" @click.prevent.self="openLink">
             <div class="avatar" @click.prevent="openLink">
                 <figure class="w-20 rounded" v-if="props.link.favIconUrl">
                     <img class="!object-contain" :src="props.link.favIconUrl" />
@@ -82,14 +87,14 @@ onMounted(() => {
             <div class="dropdown dropdown-bottom dropdown-end h-auto self-center">
                 <label
                     tabindex="0"
-                    class="btn btn-ghost hover:btn-neutral btn-sm opacity-25 hover:opacity-100"
+                    class="btn btn-ghost px-3 hover:btn-neutral btn-sm opacity-25 hover:opacity-100"
                 >
-                    <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
+                    <EllipsisVerticalIcon class="w-12" />
                 </label>
                 <ul tabindex="0" class="dropdown-content z-10 menu p-2 shadow bg-base-100 rounded-box w-48">
-                    <li><a @click.stop="openLinkInNewTab"><font-awesome-icon icon="fas fa-external-link-alt" class="w-12"></font-awesome-icon> Open in new tab</a></li>
-                    <li><a @click="removeLink" role="button" :aria-controls="props.link.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"  class="w-12"></font-awesome-icon> Delete</a></li>
-                    <li  v-if="hasOpenTabs"><a @click="discardTabs" role="button" :aria-controls="props.link.id" title="Put tab to sleep"><font-awesome-icon icon="far fa-pause-circle" class="w-12"></font-awesome-icon> Sleep open tabs</a></li>
+                    <li><a @click.stop="openLinkInNewTab"><ArrowTopRightOnSquareIcon class="w-12" /> Open in new tab</a></li>
+                    <li><a @click="removeLink" role="button" :aria-controls="props.link.id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
+                    <li  v-if="hasOpenTabs"><a @click="discardTabs" role="button" :aria-controls="props.link.id" title="Put tab to sleep"><PauseCircleIcon class="w-12" /> Sleep open tabs</a></li>
                 </ul>
             </div>
         </div>

@@ -2,10 +2,16 @@
     import { reactive, watch, ref, onMounted, nextTick } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
-    import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
     import { v4 as uuidv4 } from "uuid"
     import { Storage } from "@plasmohq/storage"
     import * as _ from "lodash-es"
+
+    // Icons
+    import { PlusIcon } from '@heroicons/vue/24/solid'
+    import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'
+    import { PencilSquareIcon } from '@heroicons/vue/24/solid'
+    import { TrashIcon } from '@heroicons/vue/24/solid'
+    import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/solid'
 
     const workspaceData = new Storage()
     const workspaces = ref(await workspaceData.get("workspaces"));
@@ -161,13 +167,13 @@
             <div class="dropdown dropdown-right h-auto"  v-if="!showWorkspaceNameInput">
                 <label
                     tabindex="0"
-                    class="btn btn-ghost hover:btn-neutral btn-sm opacity-25 hover:opacity-100"
+                    class="btn btn-ghost px-3 hover:btn-neutral btn-sm opacity-25 hover:opacity-100"
                 >
-                    <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
+                    <EllipsisVerticalIcon class="w-12" />
                 </label>
                 <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
-                    <li><a @click="showWorkspaceNameInput = !showWorkspaceNameInput; focusWorkspaceNameInput();" class="handle-focus"><font-awesome-icon icon="far fa-edit" role="button"></font-awesome-icon> Rename</a></li>
-                    <li><a @click="deleteWorkspace" role="button" title="Delete workspace"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
+                    <li><a @click="showWorkspaceNameInput = !showWorkspaceNameInput; focusWorkspaceNameInput();" class="handle-focus"><PencilSquareIcon class="w-12" /> Rename</a></li>
+                    <li><a @click="deleteWorkspace" role="button" title="Delete workspace"><TrashIcon class="w-12" /> Delete</a></li>
                 </ul>
             </div>
 
@@ -190,7 +196,7 @@
                     type="submit"
                     class="absolute right-0 btn btn-ghost opacity-25 hover:opacity-100 hover:z-[1]"
                 >
-                    <font-awesome-icon icon="fas fa-sign-in-alt"></font-awesome-icon>
+                    <ArrowRightOnRectangleIcon />
                 </button>
             </form>
         </div>
@@ -205,7 +211,7 @@
                     class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
                     role="button"
                 >
-                    <font-awesome-icon icon="fas fa-plus" class="mx-auto"></font-awesome-icon>
+                    <PlusIcon class="mx-auto w-36" />
                     <span class="sr-only">Add new column</span>
                 </div>
                 <!-- /Add Column -->

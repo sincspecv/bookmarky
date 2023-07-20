@@ -1,9 +1,11 @@
 <script setup lang="ts">
   import { watch, ref } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
   import { Storage } from "@plasmohq/storage"
   import { v4 as uuidv4 } from "uuid"
+
+  // Icons
+  import {PencilSquareIcon, PlusIcon} from '@heroicons/vue/24/solid'
 
   const router = useRouter()
   const route = useRoute()
@@ -42,7 +44,7 @@
   <div class="container mx-auto">
       <div class="join rounded-box gap-[4px] py-10" role="menu" :key="updateKey">
           <router-link v-for="workspace in workspaces" :to="`/workspace/${workspace.id}`" class="join-item btn rounded-btn" role="menuitem">{{workspace.name}}</router-link>
-          <router-link to="/" class="join-item btn btn-neutral rounded-btn"><font-awesome-icon icon="fas fa-plus"></font-awesome-icon><span class="sr-only">Add new workspace</span></router-link>
+          <router-link to="/" class="join-item btn btn-neutral rounded-btn"><PlusIcon class="w-16" /><span class="sr-only">Add new workspace</span></router-link>
       </div>
   </div>
 </template>

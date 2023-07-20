@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import * as browser from "webextension-polyfill"
 import { reactive, ref, onMounted, nextTick } from "vue"
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 import { v4 as uuidv4 } from "uuid"
 import { Storage } from "@plasmohq/storage"
 import * as _ from "lodash-es"
@@ -9,6 +8,13 @@ import {useRoute, useRouter} from "vue-router";
 import WorkspaceColumnLink from "./WorkspaceColumnLink"
 import * as cheerio from "cheerio"
 import isURL from "validator/es/lib/isURL"
+
+// Icons
+import { PlusIcon } from '@heroicons/vue/24/solid'
+import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'
+import { PencilSquareIcon } from '@heroicons/vue/24/solid'
+import { TrashIcon } from '@heroicons/vue/24/solid'
+import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/solid'
 
 const isURLOptions = {
     protocols: ['http', 'https', 'file'],
@@ -210,13 +216,13 @@ const removeLink = (id: string) => {
                 <div class="dropdown dropdown-bottom dropdown-end h-full">
                     <label
                       tabindex="0"
-                      class="btn btn-ghost hover:btn-neutral btn-sm opacity-25 hover:opacity-100"
+                      class="btn btn-ghost px-3 hover:btn-neutral btn-sm opacity-25 hover:opacity-100"
                     >
-                      <font-awesome-icon icon="fas fa-ellipsis-v"></font-awesome-icon>
+                      <EllipsisVerticalIcon class="w-12" />
                     </label>
                     <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
-                      <li><a @click="showTitleInput" class="handle-focus"><font-awesome-icon icon="far fa-edit" role="button" :aria-controls="`column-title-${column.id}`"></font-awesome-icon> Rename</a></li>
-                      <li><a @click="removeColumn()" role="button" :aria-controls="column.id" title="Delete column"><font-awesome-icon icon="far fa-trash-alt"></font-awesome-icon> Delete</a></li>
+                      <li><a @click="showTitleInput" class="handle-focus"><PencilSquareIcon class="w-12" role="button" :aria-controls="`column-title-${column.id}`" /> Rename</a></li>
+                      <li><a @click="removeColumn()" role="button" :aria-controls="column.id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
                     </ul>
                 </div>
             </div>
@@ -235,7 +241,7 @@ const removeLink = (id: string) => {
                       type="submit"
                       class="absolute right-0 btn btn-ghost opacity-25 hover:opacity-100 hover:z-[1]"
               >
-                  <font-awesome-icon icon="fas fa-sign-in-alt"></font-awesome-icon>
+                  <ArrowRightOnRectangleIcon class="w-12" />
               </button>
           </form>
         </div>
@@ -252,7 +258,7 @@ const removeLink = (id: string) => {
                    role="button"
                    @click="showAddLinkModal"
                 >
-                    <font-awesome-icon icon="fas fa-plus" class="mx-auto"></font-awesome-icon>
+                    <PlusIcon class="w-32 mx-auto" />
                     <span class="sr-only">Add new link</span>
                 </a>
                 <!-- /Add Link Button -->
