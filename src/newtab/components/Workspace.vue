@@ -178,7 +178,7 @@
             </div>
 
             <!-- Workspace Title -->
-            <h1 class="text-3xl my-10 font-medium" v-if="!showWorkspaceNameInput">{{workspace.name}}</h1>
+            <h1 class="text-3xl my-10 font-medium" v-if="!showWorkspaceNameInput" v-html="workspace.name"></h1>
             <!-- /Workspace Title -->
 
             <form class="relative my-4 w-full max-w-md" v-if="!!showWorkspaceNameInput" @submit.prevent="updateWorkspaceName">

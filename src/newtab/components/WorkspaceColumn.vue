@@ -8,6 +8,8 @@ import {useRoute, useRouter} from "vue-router";
 import WorkspaceColumnLink from "./WorkspaceColumnLink"
 import * as cheerio from "cheerio"
 import isURL from "validator/es/lib/isURL"
+import escape from "validator/es/lib/escape"
+
 
 // Icons
 import { PlusIcon } from '@heroicons/vue/24/solid'
@@ -112,10 +114,12 @@ const showTitleInput = async () => {
     titleInput.value.focus();
 }
 
+// Save the new title
 const hideTitleInput = () => {
     // Make sure there is an actual value in the input
     if(!!column.title) {
         showInput.value = false
+        column.title = escape(column.title)
     }
 
     // Initialize column if needed
@@ -232,7 +236,7 @@ const removeLink = (id: string) => {
         <!-- Column Title -->
         <div class="text-xl relative p-10">
             <div class="flex flex-row justify-between content-center" v-if="!showInput">
-                <h2 class="font-medium">{{column.title}}</h2>
+                <h2 class="font-medium" v-html="column.title"></h2>
                 <div class="dropdown dropdown-bottom dropdown-end h-full">
                     <label
                       tabindex="0"

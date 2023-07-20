@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from "vue"
 import { useRouter, useRoute } from "vue-router"
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 import { v4 as uuidv4 } from "uuid"
 import { Storage } from "@plasmohq/storage"
 import * as _ from "lodash-es"
+import escape from "validator/es/lib/escape"
 
 const router = useRouter()
 const route = useRoute()
@@ -12,13 +12,6 @@ const route = useRoute()
 const workspaceData = new Storage()
 let workspaces = await workspaceData.get("workspaces");
 let workspace = reactive({ name: "", id: "", columns: [] })
-
-// This is really just for debugging but might come in handy later
-workspaceData.watch({
-    "workspaces": c => {
-        console.log(c);
-    }
-})
 
 // Make sure we have a workspaces array to work with
 if (!workspaces) {
@@ -51,13 +44,16 @@ const addWorkspace = async () => {
         return false;
     }
 
+    // Sanitize our workspace name
+    workspace.name = escape(workspace.name)
+
     // Make sure we have a workspace id
     if(!workspace.id) {
-        workspace.id = uuidv4();
+        workspace.id = uuidv4()
     }
 
     // Update our workspace in storage
-    workspaces.push(workspace);
+    workspaces.push(workspace)
 
     workspaceData.set(`workspaces`, workspaces)
         .then(() => {
