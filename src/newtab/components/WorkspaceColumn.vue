@@ -175,15 +175,29 @@ const addTextLink = async () => {
         return false;
     }
 
+    const splitURL = textLink.url.split("/")
+    const protocol = splitURL[0]
+    const baseURL = splitURL[2]
+
+    // Get our markup to parse
     const html = await fetch(textLink.url).then(response => response.text())
     const $ = cheerio.load(html);
 
+    // Parse our markup and assign variables
     textLink.title = $('title').text()
     textLink.description = $('meta[name*="description"]').attr('content')
     textLink.favIconUrl = $('link[rel*="icon"]').attr('href')
 
+    // Check if we have a favicon in the root dir if none was specified in the markup
+    if(typeof textLink.favIconUrl === "undefined") {
+        const rootFavIcon = await fetch(`${protocol}//${baseURL}/favicon.ico`)
+
+        if(rootFavIcon.status === 200) {
+            textLink.favIconUrl = isURL(rootFavIcon.url, isURLOptions) ? rootFavIcon.url : ""
+        }
+    }
+
     if(typeof textLink.favIconUrl === "string" && !textLink.favIconUrl.startsWith("http")) {
-        const baseURL = textLink.url.split("/")[2]
         textLink.favIconUrl = `https://${baseURL}${textLink.favIconUrl}`
     }
 
