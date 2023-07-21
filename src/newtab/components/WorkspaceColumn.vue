@@ -20,7 +20,7 @@ import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/outline'
 
 const isURLOptions = {
-    protocols: ['http', 'https', 'file'],
+    protocols: ['http', 'https', 'ftp', 'file'],
     require_protocol: true,
     allow_underscores: true,
 }
@@ -29,7 +29,7 @@ const router = useRouter()
 const route = useRoute()
 
 // Get our browser tabs
-const browserTabs = ref(await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "file://*/*"]}))
+const browserTabs = ref(await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "ftp://*/*", "file://*/*"]}))
 
 // Keep our tab list updated when they change
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -227,6 +227,10 @@ const removeLink = (id: string) => {
         column.links.splice(linkIndex, 1)
         emits('update', props.workspace)
     }
+}
+
+const openColumnLinks = (column: object[] = []) => {
+
 }
 </script>
 

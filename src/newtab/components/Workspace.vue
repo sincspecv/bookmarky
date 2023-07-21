@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import * as browser from "webextension-polyfill"
     import { reactive, watch, ref, onMounted, nextTick } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
@@ -12,6 +13,8 @@
     import { PencilSquareIcon } from '@heroicons/vue/24/outline'
     import { TrashIcon } from '@heroicons/vue/24/outline'
     import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
+    import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
+    import { BookmarkSquareIcon } from '@heroicons/vue/24/outline'
 
     const workspaceData = new Storage()
     const workspaces = ref(await workspaceData.get("workspaces"));
@@ -146,6 +149,33 @@
         workspace.columns.push({title: "", id: uuidv4(), links: []})
     }
 
+    const openAllCollections = () => {
+        if(!workspace.columns.length) {
+            // Throw an error
+            return false
+        }
+
+        workspace.columns.forEach(async column => {
+            if(!!column.links.length) {
+                let tabIds = []
+
+                await Promise.all(column.links.map(async link => {
+                    const tab = await browser.tabs.create({
+                        url: link.url
+                    })
+
+                    tabIds.push(tab.id)
+                })).then(() => {
+                    if(!!tabIds.length) {
+                        browser.tabs.group({tabIds}, (groupId) => {
+                            browser.tabGroups.update(groupId, {title: column.title})
+                        })
+                    }
+                })
+            }
+        })
+    }
+
     // Load our workspace
     getWorkspace();
 
@@ -180,6 +210,21 @@
             <!-- Workspace Title -->
             <h1 class="text-3xl my-10 font-medium" v-if="!showWorkspaceNameInput" v-html="workspace.name"></h1>
             <!-- /Workspace Title -->
+
+            <!-- Workspace Quick Actions -->
+            <ul class="flex justify-center items-center gap-1" role="menu">
+                <li class="tooltip tooltip-bottom" data-tip="Open all collections" v-if="!!workspace.columns.length">
+                    <a class="btn btn-sm hover:btn-info" title="Open all collections" role="menuitem" @click="openAllCollections">
+                        <ArrowUpOnSquareStackIcon class="h-8 w-8" />
+                    </a>
+                </li>
+                <li class="tooltip tooltip-bottom" data-tip="Import open tab groups">
+                    <a class="btn btn-sm hover:btn-info" title="Import open tab groups" role="menuitem">
+                        <BookmarkSquareIcon class="h-8 w-8" />
+                    </a>
+                </li>
+            </ul>
+            <!-- /Workspace Quick Actions -->
 
             <form class="relative my-4 w-full max-w-md" v-if="!!showWorkspaceNameInput" @submit.prevent="updateWorkspaceName">
                 <label :for="`workspace-name-${workspace.id}`" class="sr-only">Workspace Name</label>

@@ -61,7 +61,9 @@
       "https://*/*"
     ],
     "permissions": [
-      "tabs"
+      "tabs",
+      "tabGroups",
+      "debugger"
     ]
   },
   "volta": {
