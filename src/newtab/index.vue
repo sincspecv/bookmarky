@@ -35,9 +35,9 @@ defineOptions({
 <template>
     <div class="app-container h-full">
         <Suspense>
-            <main id="main" class="h-full py-10">
+            <main id="main" class="h-full w-full max-w-full">
                 <Menu></Menu>
-                <div class="container mx-auto h-full">
+                <div class="mx-auto h-full w-full min-w-0">
                     <router-view></router-view>
                 </div>
             </main>

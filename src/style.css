@@ -57,6 +57,10 @@
   .card {
     @apply rounded-md;
   }
+
+  .app-container {
+    @apply p-10 relative;
+  }
 }
 
 #__plasmo {
