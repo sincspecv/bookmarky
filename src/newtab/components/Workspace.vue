@@ -25,6 +25,8 @@
     const workspaceNameInput = ref(null);
     const showWorkspaceNameInput = ref(false);
     const deleteWorkspaceModal = ref(null);
+    const alertModal = ref(null)
+    const alertModalMessage = ref("")
 
     const router = useRouter()
     const route = useRoute()
@@ -146,6 +148,16 @@
         deleteWorkspaceModal.value.close()
     }
 
+    const closeAlertModal = () => {
+        alertModal.value.close()
+        
+        // Delay clearing the alert message
+        // to make the transition look cleaner
+        setTimeout(() => {
+            alertModalMessage.value = ""
+        }, 100)
+    }
+
     const addColumn = () => {
         workspace.columns.push({title: "", id: uuidv4(), links: []})
     }
@@ -190,50 +202,55 @@
     const importTabGroups = async () => {
         const tabGroups = await browser.tabGroups.query({})
 
-        if(!tabGroups) {
-            // Throw error
+        if(!tabGroups.length) {
+            console.log("No tabs")
+            alertModalMessage.value = "No open tabs to import."
+            alertModal.value.showModal();
+
             return false
         }
 
-        // Initialize our new column
-        const column = {title: "", id: "", links: []}
+        // Loop through all the groups, then create a new
+        // column and add all the tabs to each column
+        tabGroups.map(async group => {
+            // Initialize our new column
+            const column = {title: "", id: "", links: []}
 
-        // Loop through all of the groups, then create a new
-        // column and add all of the tabs to each column
-        await Promise.all(tabGroups.map(async group => {
             column.title = group.title;
 
-            return await browser.tabs.query({groupId: group.id})
-        })).then(async tabs => {
-            // Loop through our tabs and build our links array
-            await Promise.all(tabs[0].map(async tab => {
-                const html = await fetch(tab.url).then(response => response.text())
-                const $ = cheerio.load(html);
-                const description = $('meta[name*="description"]').attr('content')
+            await browser.tabs.query({groupId: group.id})
+                .then(async tabs => {
+                    // Loop through our tabs and build our links array
+                    await Promise.all(tabs.map(async tab => {
+                        const html = await fetch(tab.url).then(response => response.text())
+                        const $ = cheerio.load(html);
+                        const description = $('meta[name*="description"]').attr('content')
 
-                column.links.push({
-                    id: uuidv4(),
-                    title: tab.title,
-                    url: tab.url,
-                    favIconUrl: tab.favIconUrl,
-                    description: !!description ? description : "No description",
-                    createdOn: Date.now(),
+                        column.links.push({
+                            id: uuidv4(),
+                            title: tab.title,
+                            url: tab.url,
+                            favIconUrl: tab.favIconUrl,
+                            description: !!description ? description : "No description",
+                            createdOn: Date.now(),
+                        })
+                    }))
                 })
-            }))
-        }).then(() => {
-            // We need a title for our column, let's make
-            // one up in the event that we didn't get one
-            // from the group
-            if(!column.title.length) {
-                column.title = `Column ${(workspace.columns.length + 1).toString()}`
-            }
+                .then(() => {
+                    // We need a title for our column, let's make
+                    // one up in the event that we didn't get one
+                    // from the group
+                    if(!column.title.length) {
+                        column.title = `Column ${(workspace.columns.length + 1).toString()}`
+                    }
 
-            // Lastly, we need an ID
-            column.id = uuidv4()
+                    // Lastly, we need an ID
+                    column.id = uuidv4()
 
-            // Column data is built. Send it.
-            workspace.columns.push(column)
-            updateWorkspace()
+                    // Column data is built. Send it.
+                    workspace.columns.push(column)
+                    updateWorkspace()
+                })
         })
     }
 
@@ -340,6 +357,18 @@
             </div>
         </dialog>
         <!-- /Delete Workspace Modal -->
+
+        <!-- Alert Modal -->
+        <dialog :id="`${workspace.id}_alert_prompt`" class="modal" ref="alertModal">
+            <div class="modal-box w-full max-w-max min-w-50">
+                <strong class="pb-20 text-xl">{{alertModalMessage}}</strong>
+
+                <div class="modal-action">
+                    <button class="btn btn-info btn-sm" @click="closeAlertModal">OK</button>
+                </div>
+            </div>
+        </dialog>
+        <!-- /Alert Modal -->
     </div>
 </template>
 
