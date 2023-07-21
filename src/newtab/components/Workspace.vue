@@ -15,6 +15,7 @@
     import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
     import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
     import { BookmarkSquareIcon } from '@heroicons/vue/24/outline'
+    import * as cheerio from "cheerio";
 
     const workspaceData = new Storage()
     const workspaces = ref(await workspaceData.get("workspaces"));
@@ -186,6 +187,56 @@
         })
     }
 
+    const importTabGroups = async () => {
+        const tabGroups = await browser.tabGroups.query({})
+
+        if(!tabGroups) {
+            // Throw error
+            return false
+        }
+
+        // Initialize our new column
+        const column = {title: "", id: "", links: []}
+
+        // Loop through all of the groups, then create a new
+        // column and add all of the tabs to each column
+        await Promise.all(tabGroups.map(async group => {
+            column.title = group.title;
+
+            return await browser.tabs.query({groupId: group.id})
+        })).then(async tabs => {
+            // Loop through our tabs and build our links array
+            await Promise.all(tabs[0].map(async tab => {
+                const html = await fetch(tab.url).then(response => response.text())
+                const $ = cheerio.load(html);
+                const description = $('meta[name*="description"]').attr('content')
+
+                column.links.push({
+                    id: uuidv4(),
+                    title: tab.title,
+                    url: tab.url,
+                    favIconUrl: tab.favIconUrl,
+                    description: !!description ? description : "No description",
+                    createdOn: Date.now(),
+                })
+            }))
+        }).then(() => {
+            // We need a title for our column, let's make
+            // one up in the event that we didn't get one
+            // from the group
+            if(!column.title.length) {
+                column.title = `Column ${(workspace.columns.length + 1).toString()}`
+            }
+
+            // Lastly, we need an ID
+            column.id = uuidv4()
+
+            // Column data is built. Send it.
+            workspace.columns.push(column)
+            updateWorkspace()
+        })
+    }
+
     // Load our workspace
     getWorkspace();
 
@@ -229,7 +280,7 @@
                     </a>
                 </li>
                 <li class="tooltip tooltip-bottom" data-tip="Import open tab groups">
-                    <a class="btn btn-sm hover:btn-info" title="Import open tab groups" role="menuitem">
+                    <a class="btn btn-sm hover:btn-info" title="Import open tab groups" role="menuitem" @click="importTabGroups">
                         <BookmarkSquareIcon class="h-8 w-8" />
                     </a>
                 </li>

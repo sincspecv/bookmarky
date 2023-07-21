@@ -162,7 +162,7 @@ const addTabLink = async (tab = {}) => {
         title: tab.title,
         url: tab.url,
         favIconUrl: tab.favIconUrl,
-        description: !!description ? description : "",
+        description: !!description ? description : "No description",
         createdOn: Date.now(),
     }
 
@@ -201,6 +201,7 @@ const addTextLink = async () => {
         }
     }
 
+    // Fix a relative URl
     if(typeof textLink.favIconUrl === "string" && !textLink.favIconUrl.startsWith("http")) {
         textLink.favIconUrl = `https://${baseURL}${textLink.favIconUrl}`
     }
@@ -210,7 +211,7 @@ const addTextLink = async () => {
         title: textLink.title,
         url: textLink.url.replace(/\/?$/, '/'), // Make sure we have a trailing slash to make the browser API happy later
         favIconUrl: textLink.favIconUrl,
-        description: textLink.description,
+        description: !!textLink.description ? textLink.description : "No description",
         createdOn: Date.now(),
     }
 
