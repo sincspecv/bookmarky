@@ -7,6 +7,12 @@
     import { Storage } from "@plasmohq/storage"
     import * as _ from "lodash-es"
 
+    import { useWorkspacesStore } from "~stores/useWorkspacesStore"
+
+    const store = useWorkspacesStore();
+
+    console.log(await store.getWorkspaces)
+
     // Icons
     import { PlusIcon } from '@heroicons/vue/24/solid'
     import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'

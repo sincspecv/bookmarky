@@ -2,7 +2,7 @@
   import { watch, ref } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { Storage } from "@plasmohq/storage"
-  import { v4 as uuidv4 } from "uuid"
+  import { v4 as uuidv4 } from "uuid" 
 
   // Icons
   import { PlusIcon } from '@heroicons/vue/24/solid'

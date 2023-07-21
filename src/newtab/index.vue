@@ -4,6 +4,7 @@ import type { App } from "vue"
 
 // Plugins
 import * as VueRouter from "vue-router"
+import { createPinia } from 'pinia'
 
 // Components
 import Menu from "~newtab/components/Menu.vue";
@@ -28,6 +29,7 @@ defineOptions({
 
         // Init our plugins
         app.use(router)
+        app.use(createPinia())
     }
 })
 </script>
