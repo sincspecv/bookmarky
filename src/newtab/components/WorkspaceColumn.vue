@@ -263,6 +263,28 @@ const openAllLinks = async () => {
 }
 
 const importOpenTabs = async () => {
+    if(!browserTabs.value.length) {
+        emits('alert', 'No tabs to import.')
+        return false;
+    }
+
+    await Promise.all(browserTabs.value.map(async tab => {
+        const html = await fetch(tab.url).then(response => response.text())
+        const $ = cheerio.load(html);
+        const description = $('meta[name*="description"]').attr('content')
+
+        column.links.push({
+            id: uuidv4(),
+            title: tab.title,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
+            description: !!description ? description : "No description",
+            createdOn: Date.now(),
+        })
+    })).then(() => {
+        emits('update', props.workspace)
+    })
+
 
 }
 </script>
