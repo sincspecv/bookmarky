@@ -72,7 +72,7 @@ onMounted(() => {
     <!-- Link -->
     <button
         @click.prevent.self="openLink"
-        class="bg-neutral hover:drop-shadow-lg w-full min-w-0 p-10 rounded-md flex flex-col flex-nowrap justify-start items-center gap-5 hover:z-10"
+        class="bg-neutral hover:drop-shadow-lg w-full min-w-0 px-10 py-5 rounded-md flex flex-col flex-nowrap justify-start items-center gap-5 hover:z-10"
     >
         <div class="flex justify-start flex-nowrap gap-5 w-full max-w-full" @click.prevent.self="openLink">
             <div class="avatar" @click.prevent="openLink">

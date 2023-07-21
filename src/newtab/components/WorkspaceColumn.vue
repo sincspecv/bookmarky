@@ -293,7 +293,7 @@ const importOpenTabs = async () => {
     <!-- Column -->
     <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
         <!-- Column Title -->
-        <div class="text-xl relative p-10">
+        <div class="text-xl relative px-10 py-5">
             <div class="flex flex-row justify-between content-center" v-if="!showInput">
                 <h2 class="font-medium" v-html="column.title"></h2>
                 <div class="dropdown dropdown-bottom dropdown-end h-full">
@@ -328,7 +328,7 @@ const importOpenTabs = async () => {
               </button>
           </form>
             <!-- Column Quick Actions -->
-            <ul class="flex justify-start items-center gap-1" role="menu">
+            <ul class="flex justify-start items-center gap-1" role="menu"  v-if="!showInput">
                 <li class="tooltip tooltip-bottom" data-tip="Open all links" v-if="!!column.links.length">
                     <a class="btn btn-xs hover:btn-info" title="Open all links" role="menuitem" @click="openAllLinks">
                         <ArrowUpOnSquareStackIcon class="h-5 w-5" />
@@ -344,13 +344,13 @@ const importOpenTabs = async () => {
         </div>
         <!-- /Column Title -->
         <!-- Links Container -->
-        <div class="relative overflow-y-scroll" style="height: calc(100% - 72px)">
+        <div class="relative overflow-y-scroll" style="height: calc(100% - 111px)">
             <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column.id">
                 <!-- Links -->
                 <WorkspaceColumnLink @remove="removeLink" v-for="link in column.links" :link="link"/>
                 <!-- /Links -->
                 <!-- Add Link Button -->
-                <a class="w-full btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
+                <a class="w-full mb-xxj btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
                    title="Add a new link"
                    role="button"
                    @click="showAddLinkModal"
