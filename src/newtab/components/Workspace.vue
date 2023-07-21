@@ -150,7 +150,7 @@
 
     const closeAlertModal = () => {
         alertModal.value.close()
-        
+
         // Delay clearing the alert message
         // to make the transition look cleaner
         setTimeout(() => {
@@ -164,38 +164,45 @@
 
     const openAllCollections = () => {
         if(!workspace.columns.length) {
-            // Throw an error
+            alertModalMessage.value = "No collection with links to open."
+            alertModal.value.showModal();
+
             return false
         }
 
         workspace.columns.forEach(async column => {
-            if(!!column.links.length) {
-                let tabIds = []
+            if(!column.links.length) {
+                alertModalMessage.value = "No collection with links to open."
+                alertModal.value.showModal();
 
-                // First we have to open all of our links and then add the tab ID
-                // to an array. After we have all of our links we can create a tab
-                // and add the links to it using the array of tab IDs. After the
-                // group is created and all the tabs have been added to it, we can
-                // lastly add the column name as the tab name.
-                await Promise.all(column.links.map(async link => {
-                    // Open our link
-                    const tab = await browser.tabs.create({
-                        url: link.url
-                    })
-
-                    // Add the tab ID to our array
-                    tabIds.push(tab.id)
-                })).then(() => {
-                    // Make sure we actually opened some tabs
-                    if(!!tabIds.length) {
-                        // Create the group and add our tabs
-                        browser.tabs.group({tabIds}, (groupId) => {
-                            // Add the title to the group
-                            browser.tabGroups.update(groupId, {title: column.title})
-                        })
-                    }
-                })
+                return false
             }
+
+            let tabIds = []
+
+            // First we have to open all of our links and then add the tab ID
+            // to an array. After we have all of our links we can create a tab
+            // and add the links to it using the array of tab IDs. After the
+            // group is created and all the tabs have been added to it, we can
+            // lastly add the column name as the tab name.
+            await Promise.all(column.links.map(async link => {
+                // Open our link
+                const tab = await browser.tabs.create({
+                    url: link.url
+                })
+
+                // Add the tab ID to our array
+                tabIds.push(tab.id)
+            })).then(() => {
+                // Make sure we actually opened some tabs
+                if(!!tabIds.length) {
+                    // Create the group and add our tabs
+                    browser.tabs.group({tabIds}, (groupId) => {
+                        // Add the title to the group
+                        browser.tabGroups.update(groupId, {title: column.title})
+                    })
+                }
+            })
         })
     }
 
@@ -203,8 +210,7 @@
         const tabGroups = await browser.tabGroups.query({})
 
         if(!tabGroups.length) {
-            console.log("No tabs")
-            alertModalMessage.value = "No open tabs to import."
+            alertModalMessage.value = "No open tab groups to import."
             alertModal.value.showModal();
 
             return false
