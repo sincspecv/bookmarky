@@ -14,7 +14,7 @@ import escape from "validator/es/lib/escape"
 // Icons
 import { PlusIcon } from '@heroicons/vue/24/solid'
 import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'
-import { PencilSquareIcon } from '@heroicons/vue/24/outline'
+import { ArrowUpOnSquareStackIcon, BookmarkSquareIcon, PencilSquareIcon} from '@heroicons/vue/24/outline'
 import { TrashIcon } from '@heroicons/vue/24/outline'
 import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/outline'
@@ -40,7 +40,7 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 const props = defineProps(['workspace', 'column'])
 
 // And our emits
-const emits = defineEmits(['update'])
+const emits = defineEmits(['update', 'alert'])
 
 // Make sure we have a workspace and redirect if not
 if(!props.workspace) {
@@ -230,7 +230,39 @@ const removeLink = (id: string) => {
     }
 }
 
-const openColumnLinks = (column: object[] = []) => {
+const openAllLinks = async () => {
+    if(!column.links.length) {
+        emits('alert', 'No links to open.')
+        return false;
+    }
+
+    // First we have to open all of our links and then add the tab ID
+    // to an array. After we have all of our links we can create a tab
+    // and add the links to it using the array of tab IDs. After the
+    // group is created and all the tabs have been added to it, we can
+    // lastly add the column name as the tab name.
+    let tabIds = []
+    await Promise.all(column.links.map(async link => {
+        // Open our link
+        const tab = await browser.tabs.create({
+            url: link.url
+        })
+
+        // Add the tab ID to our array
+        tabIds.push(tab.id)
+    })).then(() => {
+        // Make sure we actually opened some tabs
+        if(!!tabIds.length) {
+            // Create the group and add our tabs
+            browser.tabs.group({tabIds}, (groupId) => {
+                // Add the title to the group
+                browser.tabGroups.update(groupId, {title: column.title})
+            })
+        }
+    })
+}
+
+const importOpenTabs = async () => {
 
 }
 </script>
@@ -273,6 +305,20 @@ const openColumnLinks = (column: object[] = []) => {
                   <ArrowRightOnRectangleIcon class="w-12" />
               </button>
           </form>
+            <!-- Column Quick Actions -->
+            <ul class="flex justify-start items-center gap-1" role="menu">
+                <li class="tooltip tooltip-bottom" data-tip="Open all links" v-if="!!column.links.length">
+                    <a class="btn btn-xs hover:btn-info" title="Open all links" role="menuitem" @click="openAllLinks">
+                        <ArrowUpOnSquareStackIcon class="h-5 w-5" />
+                    </a>
+                </li>
+                <li class="tooltip tooltip-bottom" data-tip="Import all open tabs">
+                    <a class="btn btn-xs hover:btn-info" title="Import all open tabs" role="menuitem" @click="importOpenTabs">
+                        <BookmarkSquareIcon class="h-5 w-5" />
+                    </a>
+                </li>
+            </ul>
+            <!-- /Column Quick Actions -->
         </div>
         <!-- /Column Title -->
         <!-- Links Container -->
