@@ -1,30 +1,17 @@
 <script setup lang="ts">
-import { reactive } from "vue"
+import { reactive, ref, onMounted } from "vue"
 import { useRouter, useRoute } from "vue-router"
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome"
 import { v4 as uuidv4 } from "uuid"
 import { Storage } from "@plasmohq/storage"
 import * as _ from "lodash-es"
-
-const workspaceData = new Storage()
-let workspaces = await workspaceData.get("workspaces");
-let workspace = reactive({ name: "", id: "" })
+import escape from "validator/es/lib/escape"
 
 const router = useRouter()
 const route = useRoute()
 
-workspaceData.watch({
-    "workspaces": c => {
-        console.log(c);
-    }
-})
-
-// Check if we are loading an existing workspace
-// console.log(route.params.id)
-
-if(!!route.params.id) {
-    workspace.id = route.params.id
-}
+const workspaceData = new Storage()
+let workspaces = await workspaceData.get("workspaces");
+let workspace = reactive({ name: "", id: "", columns: [] })
 
 // Make sure we have a workspaces array to work with
 if (!workspaces) {
@@ -33,47 +20,62 @@ if (!workspaces) {
 
 // Check if our workspace exists
 const workspaceObject = _.find(workspaces, {id: workspace.id})
-const workspacesIndex = _.indexOf(workspaces, workspaceObject);
 
 // We have it. Let's set up our reactive variables
-if(workspacesIndex > -1) {
-    workspace.name = workspaceObject.name
-    workspace.id = workspaceObject.id
+if(!!workspaceObject) {
+    router.push({name: "workspace", params: {id: workspaceObject.id}, replace: true})
 }
 
-// console.log(workspaces);
+// Check for an already active workspace
+const activeWorkspace = await workspaceData.get("activeWorkspace");
+if(!!activeWorkspace) {
+    router.replace({name: "workspace", params: {id: activeWorkspace.id}})
+}
+
+// Set our focus on the input on initial load
+const workspaceNameInput = ref(null);
+onMounted(() => {
+    workspaceNameInput.value.focus();
+})
 
 const addWorkspace = async () => {
-    // Make sure we're not overwriting an existing workspace
-    if(!workspace.id) {
-        workspace.id = uuidv4();
+    // Make sure we have a workspace name
+    if(!workspace.name) {
+        return false;
     }
 
-    workspaces.push(workspace);
-    await workspaceData.set(`workspaces`, workspaces)
+    // Sanitize our workspace name
+    workspace.name = escape(workspace.name)
+
+    // Make sure we have a workspace id
+    if(!workspace.id) {
+        workspace.id = uuidv4()
+    }
+
+    // Update our workspace in storage
+    workspaces.push(workspace)
+
+    workspaceData.set(`workspaces`, workspaces)
         .then(() => {
+            // Set as active workspace
+            workspaceData.set(`activeWorkspace`, workspace)
             router.push({name: "workspace", params: {id: workspace.id}, replace: true})
         })
-
 }
 
 </script>
 
 <template>
-    <div class="container">
-        <h1 class="text-3xl my-10">Workspace</h1>
+    <div>
+        <h1 class="text-3xl my-10 font-medium">Add a New Workspace</h1>
         <div v-if="!workspace.id" class="rounded-box drop-shadow-md bg-neutral p-20">
-            <h2 class="text-2xl mb-10">Add a New Workspace</h2>
             <form @submit.prevent="addWorkspace" class="flex flex-col w-full gap-10" x-data="FormHandler">
                 <label for="workspaceName" class="text-base">
                     Enter a unique name for your workspace
                 </label>
-                <input type="text" id="workspaceName" name="workspaceName"  placeholder="Workspace Name" class="input input-bordered w-full" v-model="workspace.name" />
-                <button type="submit" class="btn btn-primary">Add Workspace</button>
+                <input type="text" id="workspaceName" name="workspaceName" ref="workspaceNameInput" placeholder="Workspace Name" class="input input-lg input-bordered w-full" v-model="workspace.name" />
+                <button type="submit" class="btn enabled:btn-primary disabled:btn-active" :disabled="!workspace.name">Add Workspace</button>
             </form>
-        </div>
-        <div v-if="!!workspace.id">
-            <h2>Workspace id: {{workspace.id}}</h2>
         </div>
     </div>
 </template>

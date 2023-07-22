@@ -1,9 +1,11 @@
 <script setup lang="ts">
   import { watch, ref } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
   import { Storage } from "@plasmohq/storage"
   import { v4 as uuidv4 } from "uuid"
+
+  // Icons
+  import { PlusIcon } from '@heroicons/vue/24/solid'
 
   const router = useRouter()
   const route = useRoute()
@@ -15,9 +17,19 @@
 
   // Watch for changes and update the menu if necessary
   watch(() => route.params.id, async (toParams, prevParams) => {
+      // Clear our active workspace so that we don't get stuck on a single
+      // workspace view. This will be re-set when we load a new workspace.
+      const activeWorkspace = await workspaceData.get("activeWorkspace");
+      if(!!activeWorkspace) {
+          await workspaceData.set("activeWorkspace", false)
+      }
+
+      let renderFlag: boolean = false;
+      if(route.query.hasOwnProperty("render")) {
+          renderFlag = !!route.query.render;
+      }
       // Only update if we're coming from the add a workspace route
-      if(!!toParams && prevParams === undefined) {
-          console.log("Prev: ", prevParams)
+      if((!!toParams && prevParams === undefined) || renderFlag) {
           workspaces = await workspaceData.get("workspaces");
 
           // Update the key to force Vue to reload component
@@ -29,10 +41,10 @@
 </script>
 
 <template>
-  <div class="container mx-auto">
-      <div class="join rounded-box gap-[4px] p-10" role="menu" :key="updateKey">
-          <router-link v-for="workspace in workspaces" :to="`/workspace/${workspace.id}`" class="join-item btn btn-neutral rounded-btn" role="menuitem">{{workspace.name}}</router-link>
-          <router-link to="/" class="join-item btn btn-neutral rounded-btn"><font-awesome-icon icon="fas fa-plus"></font-awesome-icon><span class="sr-only">Add new workspace</span></router-link>
+  <div class="mx-auto w-full min-w-0">
+      <div class="join gap-[4px] my-10 w-full carousel relative" role="menu" :key="updateKey">
+          <router-link v-for="workspace in workspaces" :to="`/workspace/${workspace.id}`" class="join-item btn rounded-btn carousel-item" role="menuitem" v-html="workspace.name"></router-link>
+          <router-link to="/" class="join-item btn btn-neutral rounded-btn w-[60.78px] ml-px sticky right-0 top-1/2 -translate-y-[1.5px]"><PlusIcon class="stroke-current stroke-1 w-16" /><span class="sr-only">Add new workspace</span></router-link>
       </div>
   </div>
 </template>
