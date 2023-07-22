@@ -17,12 +17,6 @@ const openLink = (link : Link) => {
         url: link.url
     })
 }
-
-const changeActiveColumn = async (column : Column = {}) => {
-    // activeColumn.value = column
-    console.log(column)
-    console.log(activeColumn.value)
-}
 </script>
 
 <template>
