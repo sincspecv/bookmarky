@@ -6,12 +6,11 @@
     import { v4 as uuidv4 } from "uuid"
     import { Storage } from "@plasmohq/storage"
     import * as _ from "lodash-es"
+    import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
 
     import { useWorkspacesStore } from "~stores/useWorkspacesStore"
 
-    const store = useWorkspacesStore();
-
-    console.log(await store.getWorkspaces)
+    const store = useWorkspacesStore()
 
     // Icons
     import { PlusIcon } from '@heroicons/vue/24/solid'
