@@ -2,21 +2,24 @@
  * Define our types
  */
 export interface Workspace {
+    _id: String
     name: String
-    id: String
     columns: Array<Column>
 }
 
 export interface Column {
+    _id: String,
+    workspace: String
     title: String,
-    id: String,
-    links: Array<Link>
+    links?: Array<Link>,
+    created_on?: String
 }
 
 export interface Link {
+    _id: String,
+    column: String,
     title: String,
     url: String,
-    id: String,
     description?: String,
     favIconUrl?: String
 }
