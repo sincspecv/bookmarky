@@ -2,16 +2,17 @@
  * Define our types
  */
 export interface Workspace {
-    _id: String
-    name: String
-    columns: Array<Column>
+    _id: String,
+    name: String,
+    columns?: String[],
+    created_on?: String
 }
 
 export interface Column {
     _id: String,
     workspace: String
     title: String,
-    links?: Array<Link>,
+    links?: String[],
     created_on?: String
 }
 
@@ -21,5 +22,13 @@ export interface Link {
     title: String,
     url: String,
     description?: String,
-    favIconUrl?: String
+    favIconUrl?: String,
+    created_on?: String
+}
+
+export interface WorkspaceCache {
+    _id: String,
+    name: String,
+    columns?: Column[],
+    created_on?: String
 }

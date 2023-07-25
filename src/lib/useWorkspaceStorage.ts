@@ -1,5 +1,5 @@
 import { Storage } from "@plasmohq/storage"
-import type { Workspace, Column, Link } from "~lib/interfaces"
+import type { Workspace, Column, Link, WorkspaceCache } from "~lib/interfaces"
 
 const storage = new Storage()
 
@@ -21,15 +21,33 @@ export const useWorkspaceStorage = () : object => {
 
             return workspaces
         },
-        getActiveWorkspace: async () : Promise<Workspace> => {
+        getWorkspace: async (workspaceId: String) : Promise<Workspace|boolean> => {
+            const workspaces : Workspace[] = await storageObj.getWorkspaces()
+
+            const workspaceIndex : number|boolean = workspaces.findIndex((o : Workspace) => o._id === workspaceId)
+
+            return workspaceIndex > -1 ? workspaces[workspaceIndex] : false
+        },
+        setWorkspace: async (workspace: Workspace) : Promise<void> => {
+            const workspaces : Workspace[] = await storageObj.getWorkspaces()
+            const workspaceIndex : number|boolean = workspaces.findIndex((o : Workspace) => o._id === workspace._id)
+
+            if(workspaceIndex > -1) {
+                workspaces[workspaceIndex] = Object.assign(workspaces[workspaceIndex], workspace)
+            }
+
+            await storage.set("workspaces", workspaces)
+        },
+        getActiveWorkspace: async () : Promise<WorkspaceCache> => {
             return await storage.get("activeWorkspace")
         },
         setActiveWorkspace: async (workspace: Workspace) : Promise<void> => {
             await storage.set("activeWorkspace", workspace)
         },
-        getActiveColumns: async () : Promise<object[]> => {
-            const workspace: Workspace = await storage.get("activeWorkspace")
-            return workspace.columns
+        getActiveColumns: async () : Promise<Column[]|boolean> => {
+            const workspace: WorkspaceCache = await storage.get("activeWorkspace")
+            
+            return !!workspace.columns ? workspace.columns : false
         },
         getColumns: async () : Promise<Column[]> => {
             const columns : Column[] = await storage.get("columns")
