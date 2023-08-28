@@ -19,7 +19,7 @@
     "@plasmohq/storage": "^1.7.0",
     "cheerio": "1.0.0-rc.12",
     "pinia": "^2.1.4",
-    "plasmo": "0.81.0",
+    "plasmo": "0.82.1",
     "tailwindcss": "^3.3.3",
     "uuid": "^9.0.0",
     "validator": "^13.9.0",

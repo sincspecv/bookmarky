@@ -16,12 +16,13 @@ export const useWorkspaceStorage = () : object => {
 
             // Make sure we have a workspaces array to work with
             if (!workspaces.length) {
-                workspaces = await storage.set("workspaces", []);
+                await storage.set("workspaces", []);
+                workspaces = await storage.get("workspaces")
             }
 
             return workspaces
         },
-        getWorkspace: async (workspaceId: String) : Promise<Workspace|boolean> => {
+        getWorkspace: async (workspaceId: string) : Promise<Workspace|boolean> => {
             const workspaces : Workspace[] = await storageObj.getWorkspaces()
 
             const workspaceIndex : number|boolean = workspaces.findIndex((o : Workspace) => o._id === workspaceId)
@@ -32,21 +33,43 @@ export const useWorkspaceStorage = () : object => {
             const workspaces : Workspace[] = await storageObj.getWorkspaces()
             const workspaceIndex : number|boolean = workspaces.findIndex((o : Workspace) => o._id === workspace._id)
 
+            // If workspace is already part of the workspaces array, update it, otherwise add it
             if(workspaceIndex > -1) {
                 workspaces[workspaceIndex] = Object.assign(workspaces[workspaceIndex], workspace)
+            } else {
+                workspaces.push(workspace)
             }
 
             await storage.set("workspaces", workspaces)
         },
+        removeWorkspace: async (workspace: Workspace) : Promise<void> => {
+            const workspaces : Workspace[] = await storageObj.getWorkspaces()
+            const workspaceIndex : number|boolean = workspaces.findIndex((o : Workspace) => o._id === workspace._id)
+
+            // Remove it
+            if(workspaceIndex > -1) {
+                workspaces.splice(workspaceIndex, 1)
+                await storage.set("workspaces", workspaces)
+            }
+
+        },
         getActiveWorkspace: async () : Promise<WorkspaceCache> => {
-            return await storage.get("activeWorkspace")
+            const activeWorkspace : WorkspaceCache = await storage.get("activeWorkspace")
+
+            return !!activeWorkspace ? activeWorkspace : {_id: "", name: ""}
         },
         setActiveWorkspace: async (workspace: Workspace) : Promise<void> => {
-            await storage.set("activeWorkspace", workspace)
+            const workspaceCache : WorkspaceCache = {
+                _id: workspace._id,
+                name: workspace.name,
+                columns: await storageObj.getWorkspaceColumns(workspace)
+            }
+
+            await storage.set("activeWorkspace", workspaceCache)
         },
         getActiveColumns: async () : Promise<Column[]|boolean> => {
-            const workspace: WorkspaceCache = await storage.get("activeWorkspace")
-            
+            const workspace: WorkspaceCache = await storageObj.getActiveWorkspace()
+
             return !!workspace.columns ? workspace.columns : false
         },
         getColumns: async () : Promise<Column[]> => {
@@ -75,12 +98,12 @@ export const useWorkspaceStorage = () : object => {
 
             await storage.set("columns", columns)
         },
-        getWorkspaceColumns: async (workspaceId : String) : Promise<Column[]> => {
+        getWorkspaceColumns: async (workspace : Workspace) : Promise<Column[]> => {
             const columns : Column[] =  await storageObj.getColumns()
             const workspaceColumns : Column[] = [];
 
             columns.forEach((column : Column) => {
-                if(column.workspace === workspaceId) {
+                if(column.workspace === workspace._id) {
                     workspaceColumns.push(column)
                 }
             })
