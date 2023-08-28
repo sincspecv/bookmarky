@@ -27,12 +27,15 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         // Get the workspaces from storage
         workspaces.value = await workspaceStorage.getWorkspaces()
 
+        // Get columns from storage
+        columns.value = await workspaceStorage.getColumns()
+
         // Set the active workspace
         activeWorkspace.value = await workspaceStorage.getActiveWorkspace()
     }
 
     const setActiveWorkspace = async (workspaceId : string) : Promise<void> => {
-        await workspaceStorage.getWorkspace(workspaceId).then(async (workspace) => {
+        await workspaceStorage.getWorkspace(workspaceId).then(async (workspace : Workspace) => {
             await workspaceStorage.setActiveWorkspace(workspace).then(() => {
                 activeWorkspace.value = workspaceStorage.getActiveWorkspace()
             })
@@ -40,11 +43,29 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
     }
 
     const getWorkspace = async (workspaceId : string) : Promise<Workspace> => {
-        return await workspaceStorage.getWorkspace(workspaceId)
+        if(!workspaces.value?.length) {
+            await loadWorkspaces()
+        }
+
+        const workspaceIndex : number|boolean = workspaces.value?.findIndex((o : Workspace) => o._id === workspaceId)
+
+        return workspaceIndex > -1 ? workspaces.value[workspaceIndex] : {_id: "", name: ""}
     }
 
     const getWorkspaceColumns = async (workspace : Workspace) : Promise<Column[]> => {
-        return await workspaceStorage.getWorkspaceColumns(workspace)
+        if(!activeWorkspace.value?._id) {
+            await setActiveWorkspace(workspace._id)
+        }
+
+        const workspaceColumns : Column[] = [];
+
+        columns.value?.forEach((column : Column) => {
+            if(column.workspace === activeWorkspace.value._id) {
+                workspaceColumns.push(column)
+            }
+        })
+
+        return workspaceColumns
     }
 
     /**

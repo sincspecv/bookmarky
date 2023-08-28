@@ -1,16 +1,14 @@
 <script setup lang="ts">
     import * as browser from "webextension-polyfill"
-    import {reactive, watch, ref, onMounted, nextTick, Ref} from "vue"
+    import { watch, ref, onMounted, nextTick, Ref } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import { v4 as uuidv4 } from "uuid"
-    import { Storage } from "@plasmohq/storage"
-    import * as _ from "lodash-es"
     import * as cheerio from "cheerio";
     import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
     import { useWorkspacesStore } from "~stores/useWorkspacesStore"
     import {storeToRefs} from "pinia";
-    import type { Workspace, Column, Link, WorkspaceCache } from "~lib/interfaces"
+    import type { Workspace, Column, Link } from "~lib/interfaces"
 
     // Icons
     import { PlusIcon } from '@heroicons/vue/24/solid'
