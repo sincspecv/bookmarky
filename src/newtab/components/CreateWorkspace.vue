@@ -2,22 +2,15 @@
     import { reactive, ref, onMounted } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import { v4 as uuidv4 } from "uuid"
-    import { Storage } from "@plasmohq/storage"
     import escape from "validator/es/lib/escape"
-    import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
-    import type { Workspace, Column, Link, WorkspaceCache } from "~lib/interfaces"
-    import type {ShallowReactive, UnwrapNestedRefs} from "@vue/reactivity";
     import { useWorkspacesStore } from "~stores/useWorkspacesStore";
 
     const router = useRouter()
     const route = useRoute()
 
-    const storage = useWorkspaceStorage()
-
     const workspacesStore = useWorkspacesStore()
 
-    const workspaceData = new Storage()
-    let workspaces = workspacesStore.workspaces;
+    const workspaces = workspacesStore.workspaces;
 
     if(!workspaces.length) {
       workspacesStore.loadWorkspaces();
