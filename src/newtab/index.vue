@@ -11,6 +11,12 @@ import Menu from "~newtab/components/Menu.vue";
 import Workspace from "./components/Workspace"
 import CreateWorkspace from "./components/CreateWorkspace"
 
+import { useWorkspacesStore } from "~stores/useWorkspacesStore"
+
+// Load workspace data from persistent storage
+const workspacesStore = useWorkspacesStore()
+workspacesStore.loadWorkspaces()
+
 defineOptions({
     prepare(app: App) {
         // Define some routes

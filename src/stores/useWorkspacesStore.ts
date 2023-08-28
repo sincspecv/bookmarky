@@ -31,8 +31,20 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         activeWorkspace.value = await workspaceStorage.getActiveWorkspace()
     }
 
-    const setActiveWorkspace = async (workspace : Workspace) : Promise<void> => {
-        await workspaceStorage.setActiveWorkspace(workspace)
+    const setActiveWorkspace = async (workspaceId : string) : Promise<void> => {
+        await workspaceStorage.getWorkspace(workspaceId).then(async (workspace) => {
+            await workspaceStorage.setActiveWorkspace(workspace).then(() => {
+                activeWorkspace.value = workspaceStorage.getActiveWorkspace()
+            })
+        })
+    }
+
+    const getWorkspace = async (workspaceId : string) : Promise<Workspace> => {
+        return await workspaceStorage.getWorkspace(workspaceId)
+    }
+
+    const getWorkspaceColumns = async (workspace : Workspace) : Promise<Column[]> => {
+        return await workspaceStorage.getWorkspaceColumns(workspace)
     }
 
     /**
@@ -72,6 +84,8 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         hasActiveWorkspace,
         loadWorkspaces,
         setActiveWorkspace,
-        setWorkspace
+        getWorkspace,
+        setWorkspace,
+        getWorkspaceColumns
     }
 })

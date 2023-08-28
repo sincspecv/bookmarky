@@ -9,6 +9,7 @@
     import * as cheerio from "cheerio";
     import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
     import { useWorkspacesStore } from "~stores/useWorkspacesStore"
+    import {storeToRefs} from "pinia";
     import type { Workspace, Column, Link, WorkspaceCache } from "~lib/interfaces"
 
     // Icons
@@ -20,21 +21,24 @@
     import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
     import { BookmarkSquareIcon } from '@heroicons/vue/24/outline'
 
-    const store = useWorkspacesStore()
+    const workspacesStore = useWorkspacesStore()
     const storage = useWorkspaceStorage()
 
     const router = useRouter()
     const route = useRoute()
 
     // If we don't have an ID we can't load our workspace
-    if(!route.params.id) {
+    if(!route.params.id.length) {
       router.push({name: "create-workspace", replace: true})
     }
 
     // const workspaceData = new Storage()
     // const workspaces = ref(await workspaceData.get("workspaces"));
-    const workspace : Ref<Workspace> = ref(storage.getWorkspace(route.params.id))
-    const columns : Ref<Column[]> = ref(storage.getWorkspaceColumns(workspace.value))
+    const { workspaces, activeWorkspace } = storeToRefs(workspacesStore)
+
+    const workspace : Ref<Workspace> = ref(await workspacesStore.getWorkspace(route.params.id.toString()))
+    const columns : Ref<Column[]> = ref(await workspacesStore.getWorkspaceColumns(workspace.value))
+
     const updateColumnsKey : Ref<number> = ref(Date.now())
 
     const workspaceNameInput = ref(null);
@@ -75,59 +79,16 @@
             redirectToCreateWorkspace()
         }
 
-        // Make sure we have a workspaces array to work with
-        // if (!workspaces.value) {
-        //     await workspaceData.set("workspaces", []);
-        // }
-
-        // Make sure we have updated workspace data
-        // workspaces.value = await workspaceData.get("workspaces");
-
-        // Check if our workspace exists
-        // const workspaceObject = _.find(workspaces.value, {id: route.params.id})
-        // const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
-
-        // We have it. Let's set up our reactive variables
-        // if(workspacesIndex > -1) {
-        //     Object.entries(workspace).forEach(_workspace => {
-        //         const index = _.head(_workspace)
-        //
-        //         // Get rid of null values in any arrays
-        //         if(Array.isArray(workspaceObject[index])) {
-        //             workspaceObject[index].forEach((item, i) => {
-        //                 if(item === null) {
-        //                     workspaceObject[index].splice(i, 1);
-        //                 }
-        //             })
-        //         }
-        //
-        //         workspace[index] = workspaceObject[index]
-        //     })
-        // } else {
-        //     redirectToCreateWorkspace()
-        // }
-
         // Set workspace as active workspace so that the same workspace is loaded when new tab is open
-        // await workspaceData.set("activeWorkspace", workspace)
-        workspace.value = await storage.getWorkspace(route.params.id)
-        columns.value = await storage.getWorkspaceColumns(workspace.value)
+        // await workspaceData.set("workspace", workspace)
+        workspace.value = await workspacesStore.getWorkspace(route.params.id.toString())
+        columns.value = await workspacesStore.getWorkspaceColumns(workspace.value)
 
         // Set the current workspace as the active workspace
-        await storage.setActiveWorkspace(workspace.value)
+        await workspacesStore.setActiveWorkspace(route.params.id.toString())
 
         // Re-render our columns view
         updateColumnsKey.value = Date.now();
-    }
-
-    const updateWorkspace = async () => {
-        // Check if our workspace exists
-        // const workspaceObject = _.find(workspaces.value, {id: workspace.value._id})
-        // const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
-        //
-        // if(workspacesIndex > -1) {
-        //     workspaces.value[workspacesIndex] = workspace
-        //     await workspaceData.set(`workspaces`, workspaces.value)
-        // }
     }
 
     const focusWorkspaceNameInput = async () => {
@@ -386,7 +347,14 @@
             <div class="modal-box w-full max-w-max">
                 <h2 class="font-bold text-lg">Are you sure?</h2>
                 <div class="alert alert-warning my-10">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                      <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
                     <span class="font-bold">WARNING: This workspace will be deleted permanently and all data will be lost!</span>
                 </div>
 

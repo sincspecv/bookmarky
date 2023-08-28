@@ -15,7 +15,7 @@ export const useWorkspaceStorage = () : object => {
             let workspaces : Workspace[] = await storage.get("workspaces")
 
             // Make sure we have a workspaces array to work with
-            if (!workspaces.length) {
+            if (!workspaces?.length) {
                 await storage.set("workspaces", []);
                 workspaces = await storage.get("workspaces")
             }
@@ -74,7 +74,8 @@ export const useWorkspaceStorage = () : object => {
         },
         getColumns: async () : Promise<Column[]> => {
             const columns : Column[] = await storage.get("columns")
-            if(!columns.length) {
+
+            if(!columns?.length) {
                 await storage.set("columns", [])
             }
 
@@ -112,7 +113,7 @@ export const useWorkspaceStorage = () : object => {
         },
         getLinks: async () : Promise<Link[]> => {
             const links : Link[] = await storage.get("links")
-            if(!links.length) {
+            if(!links?.length) {
                 await storage.set("links", [])
             }
 
