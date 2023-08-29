@@ -37,8 +37,6 @@
     const workspace : Ref<Workspace> = ref(await workspacesStore.getWorkspace(route.params.id.toString()))
     const columns : Ref<Column[]> = ref(await workspacesStore.getWorkspaceColumns(workspace.value))
 
-
-
     const updateColumnsKey : Ref<number> = ref(Date.now())
 
     const workspaceNameInput = ref(null);
@@ -125,14 +123,16 @@
         }, 100)
     }
 
-    const addColumn = () => {
-        columns.value.push({
-          _id: uuidv4(),
-          workspace: workspace.value._id,
-          title: "",
-          links: [],
-          created: Date.now()
-        })
+    const addColumn = async () => {
+        const newColumn : Column = {
+            _id: uuidv4(),
+            workspace: workspace.value._id,
+            title: "",
+            links: [],
+            created: Date.now()
+        }
+
+        await workspacesStore.setColumn(newColumn)
     }
 
     const openAllCollections = async () : Promise<void> => {
