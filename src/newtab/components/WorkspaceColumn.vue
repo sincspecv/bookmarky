@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import * as browser from "webextension-polyfill"
-import { reactive, ref, onMounted, nextTick } from "vue"
+import {reactive, ref, onMounted, nextTick, Ref} from "vue"
 import { v4 as uuidv4 } from "uuid"
-import { Storage } from "@plasmohq/storage"
 import * as _ from "lodash-es"
 import {useRoute, useRouter} from "vue-router";
 import WorkspaceColumnLink from "./WorkspaceColumnLink"
 import * as cheerio from "cheerio"
 import isURL from "validator/es/lib/isURL"
 import escape from "validator/es/lib/escape"
+import { useWorkspacesStore } from "~stores/useWorkspacesStore"
+import {storeToRefs} from "pinia"
+import type { Workspace, Column, Link } from "~lib/interfaces"
 
 
 // Icons
@@ -19,6 +21,7 @@ import { TrashIcon } from '@heroicons/vue/24/outline'
 import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/outline'
 
+// Configure our URL sanitation
 const isURLOptions = {
     protocols: ['http', 'https', 'ftp', 'file'],
     require_protocol: true,
@@ -36,16 +39,16 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     browserTabs.value = await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "file://*/*"]});
 })
 
+
+// Get our workspaces store
+const workspacesStore = useWorkspacesStore()
+const activeWorkspace = workspacesStore.getActiveWorkspace
+
 // Collect our props from the parent component
-const props = defineProps(['workspace', 'column'])
+const props = defineProps(['columnId'])
 
 // And our emits
 const emits = defineEmits(['update', 'alert'])
-
-// Make sure we have a workspace and redirect if not
-if(!props.workspace) {
-    router.push({name: "create-workspace", replace: true})
-}
 
 // Error object
 const errorMessages = reactive({textLinkInput: ""})
@@ -56,17 +59,14 @@ const addLinkModal = ref(null)
 const textLink = reactive({url: "", title: "", description: "", favIconUrl: ""})
 
 // Init our column
-const column = reactive({title: "", id: "", links: []})
-const showInput = ref(!column.title)
+const emptyColumn : Column = {_id: "", title: "", workspace: activeWorkspace?._id, links: []}
+const column : Ref<Column> = ref(emptyColumn)
+const showInput : Ref<boolean> = ref(!column.value.title)
 
 // Check if we have a column
-if(!!props.column) {
-    Object.entries(props.column).forEach(_column => {
-        const index = _.head(_column)
-        column[index] = props.column[index]
-    })
-
-    showInput.value = !column.title;
+if(!!props.columnId) {
+    column.value = workspacesStore.getColumnById(props.columnId)
+    showInput.value = !column.value?.title;
 }
 
 /**
@@ -81,25 +81,17 @@ onMounted(() => {
 })
 
 const updateColumn = () => {
-    if(!column.id) {
-        column.id = uuidv4()
+    if(!column.value?._id) {
+      column.value._id = uuidv4()
     }
 
-    // Find the column in the workspace object
-    const columnObject = _.find(props.workspace.columns, { id: column.id })
-    const columnIndex = _.indexOf(props.workspace.columns, columnObject);
-
-    // Update the column
-    if(columnIndex > -1) {
-        Object.entries(props.workspace.columns[columnIndex]).forEach(_column => {
-            const index = _.head(_column)
-            props.workspace.columns[columnIndex][index] = column[index]
-        })
-    } else {
-        props.workspace.columns.push(column);
+    if(!column.value?.workspace) {
+      column.value.workspace = activeWorkspace._id
     }
 
-    emits('update', props.workspace)
+    column.value.title = escape(column.value.title)
+
+    workspacesStore.setColumn(column.value)
 
     hideTitleInput()
 }
@@ -117,20 +109,13 @@ const showTitleInput = async () => {
 // Save the new title
 const hideTitleInput = () => {
     // Make sure there is an actual value in the input
-    if(!!column.title) {
+    if(!!column.value.title) {
         showInput.value = false
-        column.title = escape(column.title)
-    }
-
-    // Initialize column if needed
-    if(!column.id) {
-        column.id = uuidv4();
-        props.workspace.columns.push(column);
     }
 }
 
 const removeColumn = () => {
-    const columnObject = _.find(props.workspace.columns, { id: column.id })
+    const columnObject = _.find(props.workspace.columns, { id: column._id })
     const columnIndex = _.indexOf(props.workspace.columns, columnObject);
 
     if(columnIndex > -1) {
@@ -249,7 +234,7 @@ const openAllLinks = async () => {
         })
 
         // Add the tab ID to our array
-        tabIds.push(tab.id)
+        tabIds.push(tab._id)
     })).then(() => {
         // Make sure we actually opened some tabs
         if(!!tabIds.length) {
@@ -291,7 +276,7 @@ const importOpenTabs = async () => {
 
 <template>
     <!-- Column -->
-    <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
+    <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column._id">
         <!-- Column Title -->
         <div class="text-xl relative px-10 py-5">
             <div class="flex flex-row justify-between content-center" v-if="!showInput">
@@ -304,17 +289,17 @@ const importOpenTabs = async () => {
                       <EllipsisVerticalIcon class="w-12" />
                     </label>
                     <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
-                      <li><a @click="showTitleInput" class="handle-focus"><PencilSquareIcon class="w-12" role="button" :aria-controls="`column-title-${column.id}`" /> Rename</a></li>
-                      <li><a @click="removeColumn()" role="button" :aria-controls="column.id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
+                      <li><a @click="showTitleInput" class="handle-focus"><PencilSquareIcon class="w-12" role="button" :aria-controls="`column-title-${column._id}`" /> Rename</a></li>
+                      <li><a @click="removeColumn()" role="button" :aria-controls="column._id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
                     </ul>
                 </div>
             </div>
             <form class="relative" v-if="!!showInput" @submit.prevent="updateColumn">
-              <label :for="`column-title-${column.id}`" class="sr-only">Collection title</label>
+              <label :for="`column-title-${column._id}`" class="sr-only">Collection title</label>
               <input
                       ref="titleInput"
-                      :name="`column-title-${column.id}`"
-                      :id="`column-title-${column.id}`"
+                      :name="`column-title-${column._id}`"
+                      :id="`column-title-${column._id}`"
                       class="input input-md input-bordered input-info w-full"
                       placeholder="Collection Title"
                       v-model="column.title"
@@ -345,7 +330,7 @@ const importOpenTabs = async () => {
         <!-- /Column Title -->
         <!-- Links Container -->
         <div class="relative overflow-y-scroll" style="height: calc(100% - 111px)">
-            <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column.id">
+            <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column._id">
                 <!-- Links -->
                 <WorkspaceColumnLink @remove="removeLink" v-for="link in column.links" :link="link"/>
                 <!-- /Links -->
@@ -366,7 +351,7 @@ const importOpenTabs = async () => {
     <!-- /Column -->
 
     <!-- Add Link Modal -->
-    <dialog :id="`${column.id}_add_link`" class="modal" v-if="!!column.id" ref="addLinkModal">
+    <dialog :id="`${column._id}_add_link`" class="modal" v-if="!!column._id" ref="addLinkModal">
         <div class="modal-box">
             <h2 class="font-bold text-lg">Add a link</h2>
             <p class="py-4">Select one of your open tabs below</p>

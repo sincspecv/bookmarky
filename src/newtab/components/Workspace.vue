@@ -37,6 +37,8 @@
     const workspace : Ref<Workspace> = ref(await workspacesStore.getWorkspace(route.params.id.toString()))
     const columns : Ref<Column[]> = ref(await workspacesStore.getWorkspaceColumns(workspace.value))
 
+
+
     const updateColumnsKey : Ref<number> = ref(Date.now())
 
     const workspaceNameInput = ref(null);
@@ -83,10 +85,10 @@
         columns.value = await workspacesStore.getWorkspaceColumns(workspace.value)
 
         // Set the current workspace as the active workspace
-        await workspacesStore.setActiveWorkspace(route.params.id.toString())
-
-        // Re-render our columns view
-        updateColumnsKey.value = Date.now();
+        await workspacesStore.setActiveWorkspace(route.params.id.toString()).then(() => {
+          // Re-render our columns view
+          updateColumnsKey.value = Date.now();
+        })
     }
 
     const focusWorkspaceNameInput = async () => {
@@ -260,7 +262,6 @@
     watch(() => route.params.id, async (toParams, prevParams) => {
         // Update if the id param has changed
         if(!!toParams) {
-
             // Load our updated workspace
             await loadWorkspace();
         }
@@ -324,8 +325,8 @@
         </div>
         <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
             <div :key="updateColumnsKey" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
-                <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" @alert="showAlert" v-for="column in workspace.columns" :column="column"></WorkspaceColumn>
-                <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-if="!workspace.columns.length"></WorkspaceColumn>
+                <WorkspaceColumn @alert="showAlert" v-for="column in workspace.columns" :columnId="column"></WorkspaceColumn>
+                <WorkspaceColumn v-if="!workspace.columns.length"></WorkspaceColumn>
                 <!-- Add Column -->
                 <div
                     v-if="workspace.columns.length"
