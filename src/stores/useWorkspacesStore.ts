@@ -126,6 +126,29 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         }
     }
 
+    const removeColumn = async (column : Column) : Promise<void> => {
+        if(!!column._id) {
+            const workspacesIndex : number|boolean = workspaces.value?.findIndex((o : Workspace) => o._id === column.workspace)
+            const workspace =  workspacesIndex > -1 ? workspaces.value[workspacesIndex] : {_id: "", name: ""}
+            
+            // Remove from the workspace
+            if(!!workspace.columns.includes(column._id)) {
+                workspace.columns.splice(workspace.columns.indexOf(column._id), 1);
+            }
+
+            // Remove from our columns array
+            const columnsIndex : number|boolean = columns.value.findIndex((o : Column) => o._id === column._id)
+            if(columnsIndex > -1) {
+                columns.value.splice(columnsIndex, 1)
+            }
+
+            // Commit to storage
+            await workspaceStorage.setColumn(column).then(async () => {
+                await workspaceStorage.setWorkspace(workspace)
+            })
+        }
+    }
+
     const resetWorkspaces = () => {
         workspaces.value = []
         activeWorkspace.value = {_id: "", name: ""}
@@ -151,6 +174,7 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         loadWorkspaces,
         setActiveWorkspace,
         setColumn,
+        removeColumn,
         getWorkspace,
         setWorkspace,
         getWorkspaceColumns,

@@ -115,13 +115,15 @@ const hideTitleInput = () => {
 }
 
 const removeColumn = () => {
-    const columnObject = _.find(props.workspace.columns, { id: column._id })
-    const columnIndex = _.indexOf(props.workspace.columns, columnObject);
+    // const columnObject = _.find(props.workspace.columns, { id: column._id })
+    // const columnIndex = _.indexOf(props.workspace.columns, columnObject);
+    //
+    // if(columnIndex > -1) {
+    //     props.workspace.columns.splice(columnIndex, 1)
+    //     emits('update', props.workspace)
+    // }
 
-    if(columnIndex > -1) {
-        props.workspace.columns.splice(columnIndex, 1)
-        emits('update', props.workspace)
-    }
+    workspacesStore.removeColumn(column.value)
 }
 
 // Show the "Add A Link" modal
@@ -140,11 +142,14 @@ const closeAddLinkModal = () => {
 const addTabLink = async (tab = {}) => {
     const html = await fetch(tab.url).then(response => response.text())
     const $ = cheerio.load(html);
-    const description = $('meta[name*="description"]').attr('content')
+
+    // Due to Chrome's ridiculous storage limitations we are omitting the
+    // description for now but plan to add it later once we figure out how
+    // const description = $('meta[name*="description"]').attr('content')
 
     const link : Link = {
         _id: uuidv4(),
-        title: tab.title,
+        title: escape(tab.title),
         url: tab.url,
         favIconUrl: tab.favIconUrl,
         description: "",
@@ -176,8 +181,11 @@ const addTextLink = async () => {
 
     // Parse our markup and assign variables
     textLink.title = $('title').text()
-    textLink.description = $('meta[name*="description"]').attr('content')
     textLink.favIconUrl = $('link[rel*="icon"]').attr('href')
+
+    // Due to Chrome's ridiculous storage limitations we are omitting the
+    // description for now but plan to add it later once we figure out how
+    // textLink.description = $('meta[name*="description"]').attr('content')
 
     // Check if we have a favicon in the root dir if none was specified in the markup
     if(typeof textLink.favIconUrl === "undefined") {
@@ -194,26 +202,27 @@ const addTextLink = async () => {
     }
 
     const link = {
-        id: uuidv4(),
-        title: textLink.title,
+        _id: uuidv4(),
+        title: escape(textLink.title),
         url: textLink.url.replace(/\/?$/, '/'), // Make sure we have a trailing slash to make the browser API happy later
         favIconUrl: textLink.favIconUrl,
-        description: !!textLink.description ? textLink.description : "No description",
+        description: "",
         createdOn: Date.now(),
     }
 
-    column.links.push(link);
-    emits('update', props.workspace)
-    closeAddLinkModal()
+    column.value.links.push(link);
+
+    await workspacesStore.setColumn(column.value).then(() => {
+        closeAddLinkModal()
+    })
 }
 
-const removeLink = (id: string) => {
-    const linkObject = _.find(column.links, { id: id })
-    const linkIndex = _.indexOf(column.links, linkObject);
+const removeLink = async (id: string) => {
+    const linkIndex = column.value.links.findIndex((link) => link._id === id);
 
     if(linkIndex > -1) {
-        column.links.splice(linkIndex, 1)
-        emits('update', props.workspace)
+        column.value.links.splice(linkIndex, 1)
+        await workspacesStore.setColumn(column.value)
     }
 }
 
@@ -292,7 +301,7 @@ const importOpenTabs = async () => {
                     </label>
                     <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
                       <li><a @click="showTitleInput" class="handle-focus"><PencilSquareIcon class="w-12" role="button" :aria-controls="`column-title-${column._id}`" /> Rename</a></li>
-                      <li><a @click="removeColumn()" role="button" :aria-controls="column._id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
+                      <li><a @click="removeColumn" role="button" :aria-controls="column._id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
                     </ul>
                 </div>
             </div>
