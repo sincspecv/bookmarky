@@ -130,7 +130,7 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         if(!!column._id) {
             const workspacesIndex : number|boolean = workspaces.value?.findIndex((o : Workspace) => o._id === column.workspace)
             const workspace =  workspacesIndex > -1 ? workspaces.value[workspacesIndex] : {_id: "", name: ""}
-            
+
             // Remove from the workspace
             if(!!workspace.columns.includes(column._id)) {
                 workspace.columns.splice(workspace.columns.indexOf(column._id), 1);
