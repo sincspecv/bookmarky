@@ -12,17 +12,17 @@ export interface Column {
     _id: string,
     workspace: string
     title: string,
-    links?: string[],
+    links?: Link[],
     created?: number
 }
 
 export interface Link {
     _id: string,
-    column: string,
     title: string,
     url: string,
     description?: string,
     favIconUrl?: string,
+    column?: string,
     created?: number
 }
 

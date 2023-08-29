@@ -123,6 +123,9 @@
         }, 100)
     }
 
+    /**
+     * Add new column to workspace.
+     */
     const addColumn = async () => {
         const newColumn : Column = {
             _id: uuidv4(),

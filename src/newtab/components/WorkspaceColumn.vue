@@ -142,18 +142,20 @@ const addTabLink = async (tab = {}) => {
     const $ = cheerio.load(html);
     const description = $('meta[name*="description"]').attr('content')
 
-    const link = {
-        id: uuidv4(),
+    const link : Link = {
+        _id: uuidv4(),
         title: tab.title,
         url: tab.url,
         favIconUrl: tab.favIconUrl,
-        description: !!description ? description : "No description",
-        createdOn: Date.now(),
+        description: "",
+        created: Date.now(),
     }
 
-    column.links.push(link);
-    emits('update', props.workspace)
-    closeAddLinkModal();
+    column.value.links.push(link);
+
+    await workspacesStore.setColumn(column.value).then(() => {
+        closeAddLinkModal();
+    })
 }
 
 // Add a manually entered URL to the link list
