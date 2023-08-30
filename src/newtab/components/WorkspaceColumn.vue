@@ -219,7 +219,7 @@ const removeLink = async (id: string) => {
 }
 
 const openAllLinks = async () => {
-    if(!column.links.length) {
+    if(!column.value.links.length) {
         emits('alert', 'No links to open.')
         return false;
     }
@@ -230,7 +230,7 @@ const openAllLinks = async () => {
     // group is created and all the tabs have been added to it, we can
     // lastly add the column name as the tab name.
     let tabIds = []
-    await Promise.all(column.links.map(async link => {
+    await Promise.all(column.value.links.map(async link => {
         // Open our link
         const tab = await browser.tabs.create({
             url: link.url
@@ -244,34 +244,38 @@ const openAllLinks = async () => {
             // Create the group and add our tabs
             browser.tabs.group({tabIds}, (groupId) => {
                 // Add the title to the group
-                browser.tabGroups.update(groupId, {title: column.title})
+                browser.tabGroups.update(groupId, {title: column.value.title})
             })
         }
     })
 }
 
 const importOpenTabs = async () => {
+    // TODO: Set up global alert box and handle message with global state
     if(!browserTabs.value.length) {
         emits('alert', 'No tabs to import.')
         return false;
     }
 
     await Promise.all(browserTabs.value.map(async tab => {
-        const html = await fetch(tab.url).then(response => response.text())
-        const $ = cheerio.load(html);
-        const description = $('meta[name*="description"]').attr('content')
+        // Due to Chrome's ridiculous storage limitations we are omitting the
+        // description for now but plan to add it later once we figure out how
 
-        column.links.push({
-            id: uuidv4(),
+        // const html = await fetch(tab.url).then(response => response.text())
+        // const $ = cheerio.load(html);
+        // const description = $('meta[name*="description"]').attr('content')
+
+        column.value.links.push({
+            _id: uuidv4(),
             title: tab.title,
             url: tab.url,
             favIconUrl: tab.favIconUrl,
-            description: !!description ? description : "No description",
-            createdOn: Date.now(),
+            description: "",
+            created: Date.now(),
         })
-    })).then(() => {
-        emits('update', props.workspace)
-    })
+
+        await workspacesStore.setColumn(column.value)
+    }))
 
 
 }
