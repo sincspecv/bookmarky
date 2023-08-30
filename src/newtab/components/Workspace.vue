@@ -199,22 +199,22 @@
         tabGroups.forEach((group) => {
             // Initialize our new column
             const column : Column = {
-              title: group.title,
-              _id: uuidv4(),
-              workspace: workspace.value._id,
-              links: [],
-              created: Date.now()
+                _id: uuidv4(),
+                title: group.title,
+                workspace: workspace.value._id,
+                links: [],
+                created: Date.now()
             }
 
             // We need a title for our column, let's make
             // one up in the event that we didn't get one
             // from the group
             if(!column.title.length) {
-              column.title = `Column ${(workspace.value.columns.length + 1).toString()}`
+              column.title = `Collection ${(workspace.value.columns.length + 1).toString()}`
             }
 
             // Add our column to our workspace
-            workspace.value.columns.push(column._id)
+            // workspace.value.columns.push(column._id)
 
             // Loop through all the tabs in the group
             // and add each tab to our column
@@ -222,16 +222,16 @@
                 .then(async tabs => {
                     // Loop through our tabs and grab the links
                     await Promise.all(tabs.map(async tab => {
-                        const html = await fetch(tab.url).then(response => response.text())
-                        const $ = cheerio.load(html);
-                        const description = $('meta[name*="description"]').attr('content')
+                        // const html = await fetch(tab.url).then(response => response.text())
+                        // const $ = cheerio.load(html);
+                        // const description = $('meta[name*="description"]').attr('content')
                         const link : Link = {
                           _id: uuidv4(),
                           column: column._id,
                           title: tab.title,
                           url: tab.url,
                           favIconUrl: tab.favIconUrl,
-                          description: !!description ? description : "No description",
+                          description: "",
                           created: Date.now(),
                         }
 
@@ -239,14 +239,16 @@
                         await storage.setLink(link)
 
                         // Add the link to our column
-                        column.links.push(link._id)
+                        column.links.push(link)
                     }))
                 })
                 .then(() => {
                     // Column data is built. Send it.
-                    storage.setColumn(column)
-                    storage.setWorkspace(workspace.value)
-                    updateWorkspace()
+                    // storage.setColumn(column)
+                    // storage.setWorkspace(workspace.value)
+                    // updateWorkspace()
+
+                    workspacesStore.setColumn(column)
                 })
         })
     }
