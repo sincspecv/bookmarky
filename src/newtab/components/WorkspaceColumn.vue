@@ -2,14 +2,12 @@
 import * as browser from "webextension-polyfill"
 import {reactive, ref, onMounted, nextTick, Ref} from "vue"
 import { v4 as uuidv4 } from "uuid"
-import * as _ from "lodash-es"
 import {useRoute, useRouter} from "vue-router";
 import WorkspaceColumnLink from "./WorkspaceColumnLink"
 import * as cheerio from "cheerio"
 import isURL from "validator/es/lib/isURL"
 import escape from "validator/es/lib/escape"
 import { useWorkspacesStore } from "~stores/useWorkspacesStore"
-import {storeToRefs} from "pinia"
 import type { Workspace, Column, Link } from "~lib/interfaces"
 
 
@@ -132,11 +130,11 @@ const closeAddLinkModal = () => {
 
 // Add a link from the selection of tabs
 const addTabLink = async (tab = {}) => {
-    const html = await fetch(tab.url).then(response => response.text())
-    const $ = cheerio.load(html);
-
     // Due to Chrome's ridiculous storage limitations we are omitting the
     // description for now but plan to add it later once we figure out how
+
+    // const html = await fetch(tab.url).then(response => response.text())
+    // const $ = cheerio.load(html);
     // const description = $('meta[name*="description"]').attr('content')
 
     const link : Link = {

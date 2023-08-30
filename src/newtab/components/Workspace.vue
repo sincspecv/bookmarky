@@ -244,10 +244,6 @@
                 })
                 .then(() => {
                     // Column data is built. Send it.
-                    // storage.setColumn(column)
-                    // storage.setWorkspace(workspace.value)
-                    // updateWorkspace()
-
                     workspacesStore.setColumn(column)
                 })
         })
