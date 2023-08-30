@@ -219,6 +219,7 @@ const removeLink = async (id: string) => {
 }
 
 const openAllLinks = async () => {
+    // TODO: Set up global alert box and handle message with global state
     if(!column.value.links.length) {
         emits('alert', 'No links to open.')
         return false;
@@ -236,8 +237,10 @@ const openAllLinks = async () => {
             url: link.url
         })
 
+        console.log(tab)
+
         // Add the tab ID to our array
-        tabIds.push(tab._id)
+        tabIds.push(tab.id)
     })).then(() => {
         // Make sure we actually opened some tabs
         if(!!tabIds.length) {
