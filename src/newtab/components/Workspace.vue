@@ -139,10 +139,10 @@
     }
 
     const openAllCollections = async () : Promise<void> => {
-        columns.value = await storage.getWorkspaceColumns(workspace.value)
+        columns.value = await workspacesStore.getWorkspaceColumns(workspace.value)
         const hasLinks = columns.value.findIndex((column : Column) => !!column.links.length) > -1
 
-        if(hasLinks && !columns.value.length) {
+        if(!hasLinks || !columns.value.length) {
             alertModalMessage.value = "No collection with links to open."
             alertModal.value.showModal()
 
@@ -157,11 +157,9 @@
             // and add the links to it using the array of tab IDs. After the
             // group is created and all the tabs have been added to it, we can
             // lastly add the column name as the tab name.
-            Promise.all(column.links.map(async linkId => {
-                const link : Link = storage.getLink(linkId);
-
+            Promise.all(column.links.map(async link => {
                 // If we don't have a link then there is no need to proceed
-                if(!link) {
+                if(!link.url?.length) {
                   return;
                 }
 
