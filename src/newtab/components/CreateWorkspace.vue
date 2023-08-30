@@ -4,6 +4,7 @@
     import { v4 as uuidv4 } from "uuid"
     import escape from "validator/es/lib/escape"
     import { useWorkspacesStore } from "~stores/useWorkspacesStore";
+    import {storeToRefs} from "pinia";
 
     const router = useRouter()
     const route = useRoute()
@@ -14,6 +15,14 @@
 
     if(!workspaces.length) {
       workspacesStore.loadWorkspaces();
+    }
+
+    // Load activeWorkspace on first load
+    const activeWorkspace = await workspacesStore.getActiveWorkspace
+
+    if(workspacesStore.firstLoad && !!activeWorkspace?._id) {
+        workspacesStore.setFirstLoad(false)
+        router.push({ name: "workspace", params: { id: activeWorkspace._id } })
     }
 
     let workspace = reactive({ _id: "", name: "", columns: [], created: 0 })

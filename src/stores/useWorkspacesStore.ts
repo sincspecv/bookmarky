@@ -6,7 +6,7 @@ import { Storage } from "@plasmohq/storage"
 import type { Workspace, Column, Link, WorkspaceCache } from "~lib/interfaces"
 import type { Ref } from "vue"
 
-const globalStorage = new Storage()
+// const globalStorage = new Storage()
 const workspaceStorage : any = useWorkspaceStorage()
 
 export const useWorkspacesStore = defineStore("workspacesStore", () => {
@@ -15,6 +15,7 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
     const columns : Ref<Column[]> = ref([])
     const activeWorkspace: Ref<Workspace> = ref({_id: "", name: "", columns: []})
     const hasActiveWorkspace: Ref<boolean> = ref(!!activeWorkspace.value._id)
+    const firstLoad : Ref<boolean> = ref(true)
 
     // Getters
     const getWorkspace = computed(() => {
@@ -47,7 +48,10 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         }
     })
 
-    const getActiveWorkspace = computed(() => {
+    const getActiveWorkspace = computed(async () : Promise<Workspace> => {
+        if(!activeWorkspace.value?._id) {
+            activeWorkspace.value = await workspaceStorage.getActiveWorkspace()
+        }
         return activeWorkspace.value
     })
 
@@ -149,6 +153,10 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         }
     }
 
+    const setFirstLoad = (isFirstLoad : boolean) : void => {
+        firstLoad.value = !!isFirstLoad
+    }
+
     const resetWorkspaces = () => {
         workspaces.value = []
         activeWorkspace.value = {_id: "", name: ""}
@@ -157,23 +165,22 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
 
     // Watch for changes to workspaces in storage
     // and update state when change occurs
-    globalStorage.watch({
-        workspaces: async (_workspaces : Workspace[]) : Promise<void> => {
-            await loadWorkspaces()
-        },
-        activeWorkspace: async (_activeWorkspace : WorkspaceCache) : Promise<void> => {
-            activeWorkspace.value = await workspaceStorage.getActiveWorkspace()
-        }
-    })
+    // globalStorage.watch({
+    //     workspaces: async (_workspaces : Workspace[]) : Promise<void> => {
+    //         await loadWorkspaces()
+    //     }
+    // })
 
     return {
         workspaces,
         columns,
         activeWorkspace,
         hasActiveWorkspace,
+        firstLoad,
         loadWorkspaces,
         setActiveWorkspace,
         setColumn,
+        setFirstLoad,
         removeColumn,
         getWorkspace,
         setWorkspace,

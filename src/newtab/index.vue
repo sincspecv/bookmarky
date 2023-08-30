@@ -4,7 +4,7 @@ import type { App } from "vue"
 
 // Plugins
 import * as VueRouter from "vue-router"
-import { createPinia } from 'pinia'
+import {createPinia, storeToRefs} from 'pinia'
 import * as Sentry from "@sentry/vue";
 
 // Components

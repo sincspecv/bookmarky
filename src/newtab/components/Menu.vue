@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { watch, ref } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { Storage } from "@plasmohq/storage"
   import { v4 as uuidv4 } from "uuid"
   import { useWorkspacesStore } from "~stores/useWorkspacesStore"
   import {storeToRefs} from "pinia";
@@ -12,9 +11,6 @@
   const router = useRouter()
   const route = useRoute()
 
-  // const workspaceData = new Storage()
-  // let workspaces = await workspaceData.get("workspaces");
-
   const workspacesStore = useWorkspacesStore()
   const { workspaces, activeWorkspace } = storeToRefs(workspacesStore)
   const updateKey = ref(uuidv4());
@@ -23,8 +19,7 @@
   watch(() => route.params.id, async (toParams, prevParams) => {
       // Clear our active workspace so that we don't get stuck on a single
       // workspace view. This will be re-set when we load a new workspace.
-      // const activeWorkspace = await workspaceData.get("activeWorkspace");
-      if(!!activeWorkspace) {
+      if(!!activeWorkspace.value) {
           await workspacesStore.setActiveWorkspace("")
       }
 

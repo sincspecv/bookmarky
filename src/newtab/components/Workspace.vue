@@ -30,8 +30,6 @@
       router.push({name: "create-workspace", replace: true})
     }
 
-    // const workspaceData = new Storage()
-    // const workspaces = ref(await workspaceData.get("workspaces"));
     const { workspaces, activeWorkspace } = storeToRefs(workspacesStore)
 
     const workspace : Ref<Workspace> = ref(await workspacesStore.getWorkspace(route.params.id.toString()))
