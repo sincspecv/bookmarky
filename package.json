@@ -6,8 +6,9 @@
   "author": "Matthew Schroeter <matt@thefancyrobot.com>",
   "scripts": {
     "dev": "plasmo dev",
-    "build": "plasmo build",
-    "package": "plasmo package"
+    "build": "plasmo build && pnpm run sentry:sourcemaps",
+    "package": "plasmo package",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org the-fancy-robot-llc --project javascript-vue ./build && sentry-cli sourcemaps upload --org the-fancy-robot-llc --project javascript-vue ./build"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.36",
@@ -17,6 +18,7 @@
     "@fortawesome/vue-fontawesome": "^3.0.3",
     "@heroicons/vue": "^2.0.18",
     "@plasmohq/storage": "^1.7.0",
+    "@sentry/vue": "^7.66.0",
     "cheerio": "1.0.0-rc.12",
     "pinia": "^2.1.4",
     "plasmo": "0.82.1",
