@@ -4,18 +4,21 @@
     import { v4 as uuidv4 } from "uuid"
     import escape from "validator/es/lib/escape"
     import { useWorkspacesStore } from "~stores/useWorkspacesStore";
+    import { useRxStore } from "~stores/useRxStore";
+
     import {storeToRefs} from "pinia";
 
     const router = useRouter()
     const route = useRoute()
 
-    const workspacesStore = useWorkspacesStore()
+    // const workspacesStore = useWorkspacesStore()
+    const workspacesStore = useRxStore()
 
     const workspaces = workspacesStore.workspaces;
 
-    if(!workspaces.length) {
-      workspacesStore.loadWorkspaces();
-    }
+    // if(!workspaces.length) {
+    //   workspacesStore.loadWorkspaces();
+    // }
 
     // Load activeWorkspace on first load
     const activeWorkspace = await workspacesStore.getActiveWorkspace
@@ -57,7 +60,7 @@
         await workspacesStore.setWorkspace(workspace)
             .then(() => {
                 // Set as active workspace
-                workspacesStore.setActiveWorkspace(workspace)
+                workspacesStore.setActiveWorkspace(workspace._id)
                 router.push({ name: "workspace", params: {id: workspace._id}, replace: true })
             })
     }

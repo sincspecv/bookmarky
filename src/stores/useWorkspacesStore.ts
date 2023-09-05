@@ -1,6 +1,8 @@
 import { defineStore } from "pinia"
 import { ref, computed } from "vue"
 import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
+import * as browser from "webextension-polyfill"
+import { byteLength } from "~lib/helpers"
 import { Storage } from "@plasmohq/storage"
 
 import type { Workspace, Column, Link, WorkspaceCache } from "~lib/interfaces"
@@ -8,6 +10,9 @@ import type { Ref } from "vue"
 
 // const globalStorage = new Storage()
 const workspaceStorage : any = useWorkspaceStorage()
+
+const QUOTA_BYTES_PER_ITEM : number = 5000
+// const QUOTA_BYTES_PER_ITEM : number = browser.storage.sync.QUOTA_BYTES_PER_ITEM
 
 export const useWorkspacesStore = defineStore("workspacesStore", () => {
     // Props
@@ -49,10 +54,7 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
     })
 
     const getActiveWorkspace = computed(async () : Promise<Workspace> => {
-        if(!activeWorkspace.value?._id) {
-            activeWorkspace.value = await workspaceStorage.getActiveWorkspace()
-        }
-        return activeWorkspace.value
+        return await workspaceStorage.getActiveWorkspace()
     })
 
     const getColumnById = computed(() => {
@@ -146,9 +148,32 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
                 columns.value.splice(columnsIndex, 1)
             }
 
+            console.log("Foo", column)
+
             // Commit to storage
-            await workspaceStorage.setColumn(column).then(async () => {
-                await workspaceStorage.setWorkspace(workspace)
+            await workspaceStorage.removeColumn(column).then(async () => {
+                await workspaceStorage.setWorkspace(workspace).then(async () => {
+                    await loadWorkspaces()
+                })
+            })
+        }
+    }
+
+    const removeWorkspace = async (workspace : Workspace) : Promise<void> => {
+        const workspaceIndex = workspaces.value?.findIndex((o : Workspace) => o._id === workspace._id)
+
+        if(workspaceIndex > -1) {
+            workspaces.value[workspaceIndex].columns.forEach((columnId : string) : void => {
+                // Remove from our columns array
+                const columnsIndex : number|boolean = columns.value.findIndex((o : Column) => o._id === columnId)
+
+                if(columnsIndex > -1) {
+                    removeColumn(columns[columnsIndex])
+                }
+            })
+            await workspaceStorage.removeWorkspace(workspaces.value[workspaceIndex]).then(async () => {
+                workspaces.value.splice(workspaceIndex, 1);
+                await loadWorkspaces()
             })
         }
     }
@@ -182,6 +207,8 @@ export const useWorkspacesStore = defineStore("workspacesStore", () => {
         setColumn,
         setFirstLoad,
         removeColumn,
+        removeWorkspace,
+        resetWorkspaces,
         getWorkspace,
         setWorkspace,
         getWorkspaceColumns,

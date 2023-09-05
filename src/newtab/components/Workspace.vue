@@ -4,10 +4,12 @@
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import { v4 as uuidv4 } from "uuid"
-    import * as cheerio from "cheerio";
+    // import * as cheerio from "cheerio";
     import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
     import { useWorkspacesStore } from "~stores/useWorkspacesStore"
     import {storeToRefs} from "pinia";
+    import { useRxStore } from "~stores/useRxStore";
+
     import type { Workspace, Column, Link } from "~lib/interfaces"
 
     // Icons
@@ -19,7 +21,8 @@
     import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
     import { BookmarkSquareIcon } from '@heroicons/vue/24/outline'
 
-    const workspacesStore = useWorkspacesStore()
+    // const workspacesStore = useWorkspacesStore()
+    const workspacesStore = useRxStore()
     const storage = useWorkspaceStorage()
 
     const router = useRouter()
@@ -30,7 +33,9 @@
       router.push({name: "create-workspace", replace: true})
     }
 
-    const { workspaces, activeWorkspace } = storeToRefs(workspacesStore)
+    const { workspaces } = storeToRefs(workspacesStore)
+
+    await workspacesStore.setActiveWorkspace(route.params.id.toString())
 
     const workspace : Ref<Workspace> = ref(await workspacesStore.getWorkspace(route.params.id.toString()))
     const columns : Ref<Column[]> = ref(await workspacesStore.getWorkspaceColumns(workspace.value))
@@ -40,6 +45,7 @@
     const deleteWorkspaceModal = ref(null);
     const alertModal = ref(null)
     const alertModalMessage = ref("")
+
 
     // Make our dropdowns go away after clicking a menu item
     onMounted(() => {
@@ -54,6 +60,9 @@
                 }
             })
         })
+
+        // Make sure firstLoad is set to false
+        workspacesStore.setFirstLoad(false)
     })
 
     /**
@@ -67,6 +76,7 @@
      * Load all of our workspace data
      */
     const loadWorkspace = async () => {
+
         // Make sure we have a workspace id and redirect
         // to the workspace creation view if not.
         if(!route.params.id) {
@@ -97,8 +107,10 @@
         if(showModal) {
             deleteWorkspaceModal.value.showModal()
         } else {
-            await storage.removeWorkspace(workspace.value)
-            closeDeleteWorkspaceModal()
+            await workspacesStore.removeWorkspace(workspace.value).then(() => {
+                closeDeleteWorkspaceModal()
+                router.push({name: "create-workspace"})
+            })
         }
     }
 
@@ -317,11 +329,9 @@
         </div>
         <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
             <div :key="workspace._id" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
-                <Transition>
                     <Suspense>
                         <WorkspaceColumn @alert="showAlert" v-for="column in workspace.columns" :columnId="column"></WorkspaceColumn>
                     </Suspense>
-                </Transition>
                 <WorkspaceColumn v-if="!workspace.columns.length"></WorkspaceColumn>
                 <!-- Add Column -->
                 <div

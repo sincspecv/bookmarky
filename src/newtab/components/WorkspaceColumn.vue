@@ -8,6 +8,7 @@ import * as cheerio from "cheerio"
 import isURL from "validator/es/lib/isURL"
 import escape from "validator/es/lib/escape"
 import { useWorkspacesStore } from "~stores/useWorkspacesStore"
+import { useRxStore } from "~stores/useRxStore";
 import type { Workspace, Column, Link } from "~lib/interfaces"
 
 
@@ -39,8 +40,9 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 
 // Get our workspaces store
-const workspacesStore = useWorkspacesStore()
-const activeWorkspace = workspacesStore.getActiveWorkspace
+// const workspacesStore = useWorkspacesStore()
+const workspacesStore = useRxStore()
+const activeWorkspace = await workspacesStore.getActiveWorkspace
 
 // Collect our props from the parent component
 const props = defineProps(['columnId'])
@@ -66,6 +68,7 @@ if(!!props.columnId) {
     column.value = workspacesStore.getColumnById(props.columnId)
     showInput.value = !column.value?.title;
 }
+
 
 /**
  * Focus on the title input if it is visible on mount
@@ -235,8 +238,6 @@ const openAllLinks = async () => {
             url: link.url
         })
 
-        console.log(tab)
-
         // Add the tab ID to our array
         tabIds.push(tab.id)
     })).then(() => {
@@ -275,8 +276,9 @@ const importOpenTabs = async () => {
             created: Date.now(),
         })
 
+    })).then(async () => {
         await workspacesStore.setColumn(column.value)
-    }))
+    })
 
 
 }

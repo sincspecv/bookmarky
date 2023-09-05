@@ -5,13 +5,18 @@
   import { useWorkspacesStore } from "~stores/useWorkspacesStore"
   import {storeToRefs} from "pinia";
 
+  import { useRxStore } from "~stores/useRxStore";
+  import useWorkspacesStorage from "~database";
+
   // Icons
   import { PlusIcon } from '@heroicons/vue/24/solid'
 
   const router = useRouter()
   const route = useRoute()
 
-  const workspacesStore = useWorkspacesStore()
+  // const workspacesStore = useWorkspacesStore()
+  const workspacesStore = useRxStore()
+  // const workspaces = ref(await workspacesStore.getWorkspaces)
   const { workspaces, activeWorkspace } = storeToRefs(workspacesStore)
   const updateKey = ref(uuidv4());
 
