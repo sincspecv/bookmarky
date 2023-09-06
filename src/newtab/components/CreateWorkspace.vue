@@ -19,8 +19,9 @@
     // We are running this check here because
     // this is the default route and will be
     // loaded first every time.
-    if(!workspacesStore.workspaces.length) {
-      await workspacesStore.initDb();
+    if(!workspacesStore.workspaces?.length) {
+        console.log("initing db")
+        await workspacesStore.initDb();
     }
 
     // Load activeWorkspace on first load

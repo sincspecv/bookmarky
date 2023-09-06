@@ -54,8 +54,13 @@ export const useRxStore = defineStore("rxStore", () => {
 
     // Actions
     const setActiveWorkspace = async (workspaceId : string) => {
+        // TODO: Get rid of this nonsense
+        if(!db) {
+            await initDb()
+        }
+
         if(!!workspaceId) {
-            activeWorkspace.value = await db.workspaces.findOne(workspaceId).exec()
+            activeWorkspace.value = await db.workspaces?.findOne(workspaceId).exec()
         }
     }
 
@@ -71,14 +76,20 @@ export const useRxStore = defineStore("rxStore", () => {
             // activeWorkspace.value.columns.push(column._id)
 
             const _workspace = await db.workspaces.findOne(column.workspace).exec()
-            _workspace.modify((data) => {
-                data.columns = data.columns.concat(column._id)
+            await _workspace.modify((data) => {
+                const columnIndex = data.columns.findIndex((c) => c._id === column._id)
+
+                if(columnIndex > -1) {
+                    Object.assign(data.columns[columnIndex], column)
+                } else {
+                    data.columns = data.columns.concat(column._id)
+                }
+
                 return data
             })
 
-            // await db.workspaces.upsert(_workspace)
-
             await db.columns.upsert(column)
+
             columns.value = await db.columns.find().exec()
         }
     }
@@ -121,6 +132,14 @@ export const useRxStore = defineStore("rxStore", () => {
 
         workspaces.value = await db.workspaces.find().exec()
         columns.value = await db.columns.find().exec()
+
+        db.workspaces.$.subscribe(async (event) => {
+            workspaces.value = await db.workspaces.find().exec()
+        })
+
+        db.columns.$.subscribe(async (event) => {
+            columns.value = await db.columns.find().exec()
+        })
     }
 
     const setFirstLoad = (isFirstLoad : boolean) : void => {
@@ -132,6 +151,8 @@ export const useRxStore = defineStore("rxStore", () => {
         activeWorkspace.value = {_id: "", name: ""}
         columns.value = []
     }
+
+
 
     return {
         db,

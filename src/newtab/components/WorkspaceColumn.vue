@@ -63,13 +63,6 @@ const emptyColumn : Column = {_id: "", title: "", workspace: activeWorkspace?._i
 const column : Ref<Column> = ref(emptyColumn)
 const showInput : Ref<boolean> = ref(!column.value.title)
 
-// Check if we have a column
-if(!!props.columnId) {
-    column.value = workspacesStore.getColumnById(props.columnId)
-    showInput.value = !column.value?.title;
-}
-
-
 /**
  * Focus on the title input if it is visible on mount
  *
@@ -81,7 +74,24 @@ onMounted(() => {
     }
 })
 
-const updateColumn = () => {
+const initColumn = async (columnId) => {
+    column.value = await workspacesStore.getColumnById(columnId)
+
+    // Set up our reactivity
+    column.value.$.subscribe(doc => {
+        column.value = doc
+    })
+
+    // Show/hide our title input as needed
+    showInput.value = !column.value?.title;
+}
+
+// Check if we have a column
+if(!!props.columnId) {
+    await initColumn(props.columnId)
+}
+
+const updateColumn = async () => {
     if(!column.value?._id) {
       column.value._id = uuidv4()
     }
@@ -92,7 +102,9 @@ const updateColumn = () => {
 
     column.value.title = escape(column.value.title)
 
-    workspacesStore.setColumn(column.value)
+    await workspacesStore.setColumn(column.value)
+
+    await initColumn(column.value._id)
 
     hideTitleInput()
 }
@@ -149,11 +161,12 @@ const addTabLink = async (tab = {}) => {
         created: Date.now(),
     }
 
-    column.value.links.push(link);
-
-    await workspacesStore.setColumn(column.value).then(() => {
-        closeAddLinkModal();
+    await column.value.modify((data) => {
+        data.links = data.links.concat(link)
+        return data
     })
+
+    closeAddLinkModal();
 }
 
 // Add a manually entered URL to the link list
@@ -203,19 +216,33 @@ const addTextLink = async () => {
         createdOn: Date.now(),
     }
 
-    column.value.links.push(link);
-
-    await workspacesStore.setColumn(column.value).then(() => {
-        closeAddLinkModal()
+    await column.value.modify((data) => {
+        data.links = data.links.concat(link)
+        return data
     })
+
+    closeAddLinkModal()
 }
 
 const removeLink = async (id: string) => {
     const linkIndex = column.value.links.findIndex((link) => link._id === id);
 
     if(linkIndex > -1) {
-        column.value.links.splice(linkIndex, 1)
-        await workspacesStore.setColumn(column.value)
+        await column.value.modify((data) => {
+            // Clone our links array so that we can modify it
+            const links = Object.assign([], data.links)
+
+            // Remove the link
+            links.splice(linkIndex, 1)
+
+            // Replace our links array with the modified version
+            data.links = links
+
+            return data
+        })
+
+
+        // await workspacesStore.setColumn(column.value)
     }
 }
 
@@ -324,7 +351,7 @@ const importOpenTabs = async () => {
           </form>
             <!-- Column Quick Actions -->
             <ul class="flex justify-start items-center gap-1" role="menu"  v-if="!showInput">
-                <li class="tooltip tooltip-bottom" data-tip="Open all links" v-if="!!column.links.length">
+                <li class="tooltip tooltip-bottom" data-tip="Open all links" v-if="!!column.links?.length">
                     <a class="btn btn-xs hover:btn-info" title="Open all links" role="menuitem" @click="openAllLinks">
                         <ArrowUpOnSquareStackIcon class="h-5 w-5" />
                     </a>
