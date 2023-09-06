@@ -14,11 +14,14 @@
     // const workspacesStore = useWorkspacesStore()
     const workspacesStore = useRxStore()
 
-    const workspaces = workspacesStore.workspaces;
-
-    // if(!workspaces.length) {
-    //   workspacesStore.loadWorkspaces();
-    // }
+    // Make sure our data is loaded.
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // We are running this check here because
+    // this is the default route and will be
+    // loaded first every time.
+    if(!workspacesStore.workspaces.length) {
+      await workspacesStore.initDb();
+    }
 
     // Load activeWorkspace on first load
     const activeWorkspace = await workspacesStore.getActiveWorkspace

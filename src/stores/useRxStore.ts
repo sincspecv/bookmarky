@@ -5,7 +5,6 @@ import useWorkspacesStorage from "~database"
 import type { Ref } from "vue"
 import type { Workspace, Column } from "~lib/interfaces"
 
-// TODO: Find a less hacky solution to the initDb() workaround
 export const useRxStore = defineStore("rxStore", () => {
     // Props
     const workspaces : Ref<Workspace[]> = ref([])
@@ -13,13 +12,10 @@ export const useRxStore = defineStore("rxStore", () => {
     const activeWorkspace: Ref<Workspace> = ref({_id: "", name: "", columns: []})
     const hasActiveWorkspace: Ref<boolean> = ref(!!activeWorkspace.value._id)
     const firstLoad : Ref<boolean> = ref(true)
-    let db = null
+    let db = null  // db is initialized in CreateWorkspace
 
     // Getters
     const getWorkspaces = computed(async () => {
-        if(!db) {
-            await initDb()
-        }
 
         workspaces.value = await db.workspaces.find().exec()
         return workspaces.value
@@ -27,10 +23,6 @@ export const useRxStore = defineStore("rxStore", () => {
 
     const getWorkspace = computed(() => {
         return async (workspaceId : string) : Promise<Workspace> => {
-            if(!db) {
-                await initDb()
-            }
-
             return await db.workspaces.findOne(workspaceId).exec()
         }
     })
@@ -40,30 +32,18 @@ export const useRxStore = defineStore("rxStore", () => {
     })
 
     const getColumns = computed(async () => {
-        if(!db) {
-            await initDb()
-        }
-
         columns.value = await db.columns.find().exec()
         return columns.value
     })
 
     const getColumnById = computed(() => {
         return async (columnId : string) => {
-            if(!db) {
-                await initDb()
-            }
-
             return await db.columns.findOne(columnId).exec()
         }
     })
 
     const getWorkspaceColumns = computed(() => {
         return async (workspace: Workspace) => {
-            if(!db) {
-                await initDb()
-            }
-
             return await db.columns.find({
                 selector: {
                     workspace: workspace._id
@@ -74,20 +54,12 @@ export const useRxStore = defineStore("rxStore", () => {
 
     // Actions
     const setActiveWorkspace = async (workspaceId : string) => {
-        if(!db) {
-            await initDb()
-        }
-
         if(!!workspaceId) {
             activeWorkspace.value = await db.workspaces.findOne(workspaceId).exec()
         }
     }
 
     const setWorkspace = async (workspace : Workspace) : Promise<void> => {
-        if(!db) {
-            await initDb()
-        }
-
         if(!!workspace._id && !!workspace.name) {
             await db.workspaces.upsert(workspace)
             workspaces.value = await db.workspaces.find().exec()
@@ -95,10 +67,6 @@ export const useRxStore = defineStore("rxStore", () => {
     }
 
     const setColumn = async (column : Column) : Promise<void> => {
-        if(!db) {
-            await initDb()
-        }
-
         if(!!column._id && !!column.title) {
             // activeWorkspace.value.columns.push(column._id)
 
@@ -116,10 +84,6 @@ export const useRxStore = defineStore("rxStore", () => {
     }
 
     const removeColumn = async (column : Column) : Promise<void> => {
-        if(!db) {
-            await initDb()
-        }
-
         if(!!column._id) {
             const columnsIndex: number|boolean = columns.value.findIndex((o: Column) => o._id === column._id)
 
@@ -134,10 +98,6 @@ export const useRxStore = defineStore("rxStore", () => {
     }
 
     const removeWorkspace = async (workspace : Workspace) : Promise<void> => {
-        if(!db) {
-            await initDb()
-        }
-
         const workspaceIndex = workspaces.value?.findIndex((o : Workspace) => o._id === workspace._id)
 
         if(workspaceIndex > -1) {
