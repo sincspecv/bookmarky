@@ -3,16 +3,15 @@
     import { useRouter, useRoute } from "vue-router"
     import { v4 as uuidv4 } from "uuid"
     import escape from "validator/es/lib/escape"
-    import { useWorkspacesStore } from "~stores/useWorkspacesStore";
+    import useWorkspacesStorage from "~database";
     import { useRxStore } from "~stores/useRxStore";
-
-    import {storeToRefs} from "pinia";
 
     const router = useRouter()
     const route = useRoute()
 
-    // const workspacesStore = useWorkspacesStore()
     const workspacesStore = useRxStore()
+    const db = await useWorkspacesStorage()
+
 
     // Make sure our data is loaded.
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,7 +59,7 @@
         }
 
         // Save our workspace
-        await workspacesStore.addWorkspace(workspace)
+        await db.workspaces.insert(workspace)
 
         // Set as active workspace
         await workspacesStore.setActiveWorkspace(workspace._id)
