@@ -46,12 +46,10 @@
       router.push({name: "create-workspace", replace: true})
     }
 
-    const { workspaces } = storeToRefs(workspacesStore)
-
     await workspacesStore.setActiveWorkspace(route.params.id.toString())
 
-    const workspace : Ref<RxWorkspaceDocument> = ref(await workspacesStore.getWorkspace(route.params.id.toString()))
-    const columns : Ref<RxColumnDocument[]> = ref(await workspacesStore.getWorkspaceColumns(workspace.value))
+    const workspace : Ref<RxWorkspaceDocument> = ref(await db.workspaces.findOne(route.params.id.toString()).exec())
+    const columns : Ref<RxColumnDocument[]> = ref(await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec())
 
     const workspaceNameInput = ref(null);
     const showWorkspaceNameInput = ref(false);
@@ -98,11 +96,11 @@
 
         // Set workspace as active workspace so that the same workspace is loaded when new tab is open
         // await workspaceData.set("workspace", workspace)
-        workspace.value = await workspacesStore.getWorkspace(route.params.id.toString())
-        columns.value = await workspacesStore.getWorkspaceColumns(workspace.value)
+        workspace.value = await db.workspaces.findOne(route.params.id.toString()).exec()
+        columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
 
         await workspace.value.$.subscribe(async (event) => {
-            workspace.value = await workspacesStore.getWorkspace(workspace.value._id)
+            workspace.value = await db.workspaces.findOne(workspace.value._id).exec()
         })
 
         // Set the current workspace as the active workspace
@@ -132,10 +130,26 @@
         if(showModal) {
             deleteWorkspaceModal.value.showModal()
         } else {
-            await workspacesStore.removeWorkspace(workspace.value).then(() => {
-                closeDeleteWorkspaceModal()
-                router.push({name: "create-workspace"})
-            })
+            const workspaceIndex = workspaces.value?.findIndex((o : RxWorkspaceDocument) => o._id === workspace.value._id)
+
+            if(workspaceIndex > -1) {
+                // Remove the workspace from store and storage
+                workspaces.value.splice(workspaceIndex, 1);
+                await db.workspaces.bulkRemove([workspace.value._id])
+
+                // Query for associated columns so that they can be removed
+                const columns = await db.columns.find({
+                    selector: {
+                        workspace: workspace.value._id
+                    }
+                }).exec()
+
+                // Remove the associated columns
+                await columns.forEach((column) =>  column.remove())
+            }
+
+            closeDeleteWorkspaceModal()
+            router.push({name: "create-workspace"})
         }
     }
 
@@ -165,11 +179,26 @@
             created: Date.now()
         }
 
-        await workspacesStore.setColumn(newColumn)
+        // const _workspace = await db.workspaces.findOne(newColumn.workspace).exec()
+        await workspace.modify((data) => {
+            const columnIndex = data.columns.findIndex((c) => c._id === newColumn._id)
+
+            if(columnIndex > -1) {
+                Object.assign(data.columns[columnIndex], newColumn._id)
+            } else {
+                data.columns = data.columns.concat(newColumn._id)
+            }
+
+            return data
+        })
+
+        await db.columns.upsert(newColumn)
+
+        columns.value = await db.columns.find().sort({created: "asc"}).exec()
     }
 
     const openAllCollections = async () : Promise<void> => {
-        columns.value = await workspacesStore.getWorkspaceColumns(workspace.value)
+        columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
         const hasLinks = columns.value.findIndex((column : Column) => !!column.links.length) > -1
 
         if(!hasLinks || !columns.value.length) {
