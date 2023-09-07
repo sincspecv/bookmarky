@@ -5,10 +5,13 @@
     import WorkspaceColumn from "./WorkspaceColumn"
     import { v4 as uuidv4 } from "uuid"
     // import * as cheerio from "cheerio";
-    import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
-    import { useWorkspacesStore } from "~stores/useWorkspacesStore"
+    // import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
+    // import { useWorkspacesStore } from "~stores/useWorkspacesStore"
     import {storeToRefs} from "pinia";
     import { useRxStore } from "~stores/useRxStore";
+    import useWorkspacesStorage from "~database";
+    import isURL from "validator/es/lib/isURL"
+    import escape from "validator/es/lib/escape"
 
     import type { Workspace, Column, Link } from "~lib/App"
     import type { RxWorkspaceDocument, RxColumnDocument } from "~lib/RxDB";
@@ -26,7 +29,7 @@
 
     // const workspacesStore = useWorkspacesStore()
     const workspacesStore = useRxStore()
-    const storage = useWorkspaceStorage()
+    const db = await useWorkspacesStorage()
 
     const router = useRouter()
     const route = useRoute()
@@ -213,6 +216,8 @@
             return false
         }
 
+        const newColumns = []
+
         // Loop through all the groups, then create a new
         // column and add all the tabs within the group to
         // each column as a link
@@ -220,7 +225,7 @@
             // Initialize our new column
             const column : Column = {
                 _id: uuidv4(),
-                title: group.title,
+                title: escape(group.title),
                 workspace: workspace.value._id,
                 links: [],
                 created: Date.now()
@@ -232,9 +237,6 @@
             if(!column.title.length) {
               column.title = `Collection ${(workspace.value.columns.length + 1).toString()}`
             }
-
-            // Add our column to our workspace
-            // workspace.value.columns.push(column._id)
 
             // Loop through all the tabs in the group
             // and add each tab to our column
@@ -248,23 +250,27 @@
                         const link : Link = {
                           _id: uuidv4(),
                           column: column._id,
-                          title: tab.title,
+                          title: escape(tab.title),
                           url: tab.url,
                           favIconUrl: tab.favIconUrl,
                           description: "",
                           created: Date.now(),
                         }
 
-                        // Save link to storage
-                        await storage.setLink(link)
-
                         // Add the link to our column
                         column.links.push(link)
                     }))
+
+                    newColumns.push(column)
                 })
-                .then(() => {
+                .then(async () => {
                     // Column data is built. Send it.
-                    workspacesStore.setColumn(column)
+                    await db.columns.bulkUpsert(newColumns)
+
+                    await workspace.value.modify((data) => {
+                        data.columns = data.columns.concat(newColumns.map((column) => column._id))
+                        return data
+                    })
                 })
         })
     }

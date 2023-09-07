@@ -42,6 +42,7 @@ export const useRxStore = defineStore("rxStore", () => {
 
     const getColumns = computed(async () => {
         columns.value = await db.columns.find().sort({created: "asc"}).exec()
+        console.log("getColumns", columns.value)
         return columns.value
     })
 
@@ -203,6 +204,7 @@ export const useRxStore = defineStore("rxStore", () => {
         getWorkspace,
         getWorkspaceColumns,
         getColumnById,
+        getColumns,
         getActiveWorkspace
     }
 })

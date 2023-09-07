@@ -260,9 +260,6 @@ const removeLink = async (id: string) => {
 
             return data
         })
-
-
-        // await workspacesStore.setColumn(column.value)
     }
 }
 
