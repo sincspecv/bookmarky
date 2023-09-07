@@ -60,8 +60,13 @@ const textLink = reactive({url: "", title: "", description: "", favIconUrl: ""})
 
 // Init our column
 const emptyColumn : Column = {_id: "", title: "", workspace: activeWorkspace?._id, links: []}
-const column : Ref<Column> = ref(emptyColumn)
+const column : Ref<Column> = ref(await workspacesStore.getColumnById(props.columnId))
 const showInput : Ref<boolean> = ref(!column.value.title)
+
+// Set up our reactivity
+column.value.$.subscribe(doc => {
+    column.value = doc
+})
 
 /**
  * Focus on the title input if it is visible on mount
@@ -74,16 +79,9 @@ onMounted(() => {
     }
 })
 
+
 const initColumn = async (columnId: string) => {
     column.value = await workspacesStore.getColumnById(columnId)
-
-    // Set up our reactivity
-    column.value.$.subscribe(doc => {
-        column.value = doc
-    })
-
-    // Show/hide our title input as needed
-    showInput.value = !column.value?.title;
 }
 
 // Check if we have a column
@@ -91,20 +89,42 @@ if(!!props.columnId) {
     await initColumn(props.columnId)
 }
 
+const updateColumnTitle = async () => {
+    await column.value.modify((data) => {
+        if(!column.value?._id) {
+            data._id = uuidv4()
+        }
+
+        if(!column.value?.workspace) {
+            data.workspace = activeWorkspace._id
+        }
+
+        data.title = escape(titleInput.value.value)
+
+        return data
+    })
+
+    hideTitleInput()
+}
+
 const updateColumn = async () => {
-    if(!column.value?._id) {
-      column.value._id = uuidv4()
-    }
+    // await workspacesStore.setColumn(column.value)
 
-    if(!column.value?.workspace) {
-      column.value.workspace = activeWorkspace._id
-    }
+    await column.value.modify((data) => {
+        if(!column.value?._id) {
+            data._id = uuidv4()
+        }
 
-    column.value.title = escape(column.value.title)
+        if(!column.value?.workspace) {
+            data.workspace = activeWorkspace._id
+        }
 
-    await workspacesStore.setColumn(column.value)
+        data.title = escape(column.value.title)
 
-    await initColumn(column.value._id)
+        return data
+    })
+
+    // await initColumn(column.value._id)
 
     hideTitleInput()
 }
@@ -331,7 +351,7 @@ const importOpenTabs = async () => {
                     </ul>
                 </div>
             </div>
-            <form class="relative" v-if="!!showInput" @submit.prevent="updateColumn">
+            <form class="relative" v-if="!!showInput" @submit.prevent="updateColumnTitle">
               <label :for="`column-title-${column._id}`" class="sr-only">Collection title</label>
               <input
                       ref="titleInput"
@@ -339,10 +359,10 @@ const importOpenTabs = async () => {
                       :id="`column-title-${column._id}`"
                       class="input input-md input-bordered input-info w-full"
                       placeholder="Collection Title"
-                      v-model="column.title"
+                      :value="column.title"
               />
               <button
-                      v-if="!!column.title"
+                      v-if="!!titleInput"
                       type="submit"
                       class="absolute right-0 btn btn-ghost opacity-25 hover:opacity-100 hover:z-[1]"
               >

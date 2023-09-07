@@ -1,13 +1,14 @@
 import { defineStore } from "pinia"
 import {ref, computed, inject, getCurrentInstance} from "vue"
 import useWorkspacesStorage from "~database"
+import { v4 as uuidv4 } from "uuid"
 import { addRxPlugin } from 'rxdb';
 import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
 
 addRxPlugin(RxDBQueryBuilderPlugin)
 
 import type { Ref } from "vue"
-import type { Workspace } from "~lib/App"
+import type { Workspace, Column } from "~lib/App"
 import type {
     RxWorkspaceDocument,
     RxColumnDocument,
@@ -46,6 +47,19 @@ export const useRxStore = defineStore("rxStore", () => {
 
     const getColumnById = computed(() => {
         return async (columnId : string) => {
+            // Create a column if one isn't specified
+            if(!columnId) {
+                columnId = uuidv4()
+                const newColumn: Column = {
+                    _id: columnId,
+                    workspace: getActiveWorkspace.value?._id,
+                    title: "",
+                    links: [],
+                    created: Date.now()
+                }
+
+                await setColumn(newColumn)
+            }
             return await db.columns.findOne(columnId).exec()
         }
     })
@@ -78,16 +92,14 @@ export const useRxStore = defineStore("rxStore", () => {
         }
     }
 
-    const setColumn = async (column : RxColumnDocument) : Promise<void> => {
-        if(!!column._id && !!column.title) {
-            // activeWorkspace.value.columns.push(column._id)
-
+    const setColumn = async (column : RxColumnDocument|Column) : Promise<void> => {
+        if(!!column._id && !!column.created) {
             const _workspace = await db.workspaces.findOne(column.workspace).exec()
             await _workspace.modify((data) => {
                 const columnIndex = data.columns.findIndex((c) => c._id === column._id)
 
                 if(columnIndex > -1) {
-                    Object.assign(data.columns[columnIndex], column)
+                    Object.assign(data.columns[columnIndex], column._id)
                 } else {
                     data.columns = data.columns.concat(column._id)
                 }
@@ -97,7 +109,7 @@ export const useRxStore = defineStore("rxStore", () => {
 
             await db.columns.upsert(column)
 
-            // columns.value = await db.columns.find().sort({created: "asc"}).exec()
+            columns.value = await db.columns.find().sort({created: "asc"}).exec()
         }
     }
 
