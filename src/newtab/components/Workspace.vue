@@ -27,6 +27,13 @@
     import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
     import { BookmarkSquareIcon } from '@heroicons/vue/24/outline'
 
+    // Configure our URL sanitation
+    const isURLOptions = {
+        protocols: ['http', 'https', 'ftp', 'file'],
+        require_protocol: true,
+        allow_underscores: true,
+    }
+
     // const workspacesStore = useWorkspacesStore()
     const workspacesStore = useRxStore()
     const db = await useWorkspacesStorage()
@@ -182,7 +189,7 @@
             // lastly add the column name as the tab name.
             Promise.all(column.links.map(async link => {
                 // If we don't have a link then there is no need to proceed
-                if(!link.url?.length) {
+                if(!link.url?.length || !isURL(link.url, isURLOptions)) {
                   return;
                 }
 
@@ -251,8 +258,8 @@
                           _id: uuidv4(),
                           column: column._id,
                           title: escape(tab.title),
-                          url: tab.url,
-                          favIconUrl: tab.favIconUrl,
+                          url: isURL(tab.url, isURLOptions) ? tab.url : "",
+                          favIconUrl: isURL(tab.favIconUrl, isURLOptions) ? tab.favIconUrl : "",
                           description: "",
                           created: Date.now(),
                         }
