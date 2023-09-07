@@ -306,7 +306,9 @@ const importOpenTabs = async () => {
         return false;
     }
 
-    await Promise.all(browserTabs.value.map(async tab => {
+    const newLinks = []
+
+    Promise.all(browserTabs.value.map(async tab => {
         // Due to Chrome's ridiculous storage limitations we are omitting the
         // description for now but plan to add it later once we figure out how
 
@@ -314,17 +316,19 @@ const importOpenTabs = async () => {
         // const $ = cheerio.load(html);
         // const description = $('meta[name*="description"]').attr('content')
 
-        column.value.links.push({
+        newLinks.push({
             _id: uuidv4(),
-            title: tab.title,
+            title: escape(tab.title),
             url: tab.url,
             favIconUrl: tab.favIconUrl,
             description: "",
             created: Date.now(),
         })
-
     })).then(async () => {
-        await workspacesStore.setColumn(column.value)
+        await column.value.modify((data) => {
+            data.links = data.links.concat(newLinks)
+            return data
+        })
     })
 
 
