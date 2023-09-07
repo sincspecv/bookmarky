@@ -19,10 +19,9 @@
     // We are running this check here because
     // this is the default route and will be
     // loaded first every time.
-    if(!workspacesStore.workspaces?.length) {
-        console.log("initing db")
-        await workspacesStore.initDb();
-    }
+    // if(!workspacesStore.workspaces?.length) {
+    //     await workspacesStore.initDb();
+    // }
 
     // Load activeWorkspace on first load
     const activeWorkspace = await workspacesStore.getActiveWorkspace
@@ -62,11 +61,10 @@
 
         // Save our workspace
         await workspacesStore.setWorkspace(workspace)
-            .then(() => {
-                // Set as active workspace
-                workspacesStore.setActiveWorkspace(workspace._id)
-                router.push({ name: "workspace", params: {id: workspace._id}, replace: true })
-            })
+
+        // Set as active workspace
+        await workspacesStore.setActiveWorkspace(workspace._id)
+        await router.push({ name: "workspace", params: {id: workspace._id}, replace: true })
     }
 </script>
 

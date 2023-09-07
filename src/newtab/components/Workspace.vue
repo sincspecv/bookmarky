@@ -10,7 +10,7 @@
     import {storeToRefs} from "pinia";
     import { useRxStore } from "~stores/useRxStore";
 
-    import type { Workspace, Column, Link } from "~lib/interfaces"
+    import type { Workspace, Column, Link } from "~lib/App"
 
     // Icons
     import { PlusIcon } from '@heroicons/vue/24/solid'

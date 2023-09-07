@@ -9,7 +9,7 @@ import isURL from "validator/es/lib/isURL"
 import escape from "validator/es/lib/escape"
 import { useWorkspacesStore } from "~stores/useWorkspacesStore"
 import { useRxStore } from "~stores/useRxStore";
-import type { Workspace, Column, Link } from "~lib/interfaces"
+import type { Workspace, Column, Link } from "~lib/App"
 
 
 // Icons
@@ -74,7 +74,7 @@ onMounted(() => {
     }
 })
 
-const initColumn = async (columnId) => {
+const initColumn = async (columnId: string) => {
     column.value = await workspacesStore.getColumnById(columnId)
 
     // Set up our reactivity

@@ -1,15 +1,23 @@
 import { defineStore } from "pinia"
-import { ref, computed } from "vue"
+import {ref, computed, inject, getCurrentInstance} from "vue"
 import useWorkspacesStorage from "~database"
+import { addRxPlugin } from 'rxdb';
+import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
+
+addRxPlugin(RxDBQueryBuilderPlugin)
 
 import type { Ref } from "vue"
-import type { Workspace, Column } from "~lib/interfaces"
+import type { Workspace } from "~lib/App"
+import type {
+    RxWorkspaceDocument,
+    RxColumnDocument,
+} from '~lib/RxDB';
 
 export const useRxStore = defineStore("rxStore", () => {
     // Props
-    const workspaces : Ref<Workspace[]> = ref([])
-    const columns : Ref<Column[]> = ref([])
-    const activeWorkspace: Ref<Workspace> = ref({_id: "", name: "", columns: []})
+    const workspaces : Ref<RxWorkspaceDocument[]> = ref([])
+    const columns : Ref<RxColumnDocument[]> = ref([])
+    const activeWorkspace: Ref<RxWorkspaceDocument|Workspace> = ref({_id: "", name: "", columns: []})
     const hasActiveWorkspace: Ref<boolean> = ref(!!activeWorkspace.value._id)
     const firstLoad : Ref<boolean> = ref(true)
     let db = null  // db is initialized in CreateWorkspace
@@ -17,12 +25,12 @@ export const useRxStore = defineStore("rxStore", () => {
     // Getters
     const getWorkspaces = computed(async () => {
 
-        workspaces.value = await db.workspaces.find().exec()
+        workspaces.value = await db.workspaces.find().sort({created: 'desc'}).exec()
         return workspaces.value
     })
 
     const getWorkspace = computed(() => {
-        return async (workspaceId : string) : Promise<Workspace> => {
+        return async (workspaceId : string) : Promise<RxWorkspaceDocument> => {
             return await db.workspaces.findOne(workspaceId).exec()
         }
     })
@@ -32,7 +40,7 @@ export const useRxStore = defineStore("rxStore", () => {
     })
 
     const getColumns = computed(async () => {
-        columns.value = await db.columns.find().exec()
+        columns.value = await db.columns.find().sort({created: "asc"}).exec()
         return columns.value
     })
 
@@ -43,12 +51,12 @@ export const useRxStore = defineStore("rxStore", () => {
     })
 
     const getWorkspaceColumns = computed(() => {
-        return async (workspace: Workspace) => {
+        return async (workspace: RxWorkspaceDocument) => {
             return await db.columns.find({
                 selector: {
                     workspace: workspace._id
                 }
-            }).exec()
+            }).sort({created: "asc"}).exec()
         }
     })
 
@@ -67,11 +75,10 @@ export const useRxStore = defineStore("rxStore", () => {
     const setWorkspace = async (workspace : Workspace) : Promise<void> => {
         if(!!workspace._id && !!workspace.name) {
             await db.workspaces.upsert(workspace)
-            workspaces.value = await db.workspaces.find().exec()
         }
     }
 
-    const setColumn = async (column : Column) : Promise<void> => {
+    const setColumn = async (column : RxColumnDocument) : Promise<void> => {
         if(!!column._id && !!column.title) {
             // activeWorkspace.value.columns.push(column._id)
 
@@ -90,55 +97,68 @@ export const useRxStore = defineStore("rxStore", () => {
 
             await db.columns.upsert(column)
 
-            columns.value = await db.columns.find().exec()
+            // columns.value = await db.columns.find().sort({created: "asc"}).exec()
         }
     }
 
-    const removeColumn = async (column : Column) : Promise<void> => {
+    const removeColumn = async (column : RxColumnDocument) : Promise<void> => {
         if(!!column._id) {
-            const columnsIndex: number|boolean = columns.value.findIndex((o: Column) => o._id === column._id)
+            // Find our workspace so that we can remove the column reference
+            const _workspaces = await db.workspaces.find({
+                selector: {
+                    columns: column._id
+                }
+            }).exec()
 
-            // Remove from store
-            if (columnsIndex > -1) {
-                columns.value.splice(columns[columnsIndex], 1);
-            }
+            // Remove the column reference
+            await _workspaces.forEach((_workspace) => {
+                _workspace.modify((data) => {
+                    data.columns = data.columns.toSpliced(data.columns.findIndex((c) => c === column._id), 1)
+                    return data
+                })
+            })
 
-            // Remove from DB
-            await db.columns.bulkRemove([column._id])
+            // Remove the column
+            const _column = await db.columns.findOne(column._id).exec()
+            _column.remove()
+
+            // Update our columns
+            columns.value = await db.columns.find().sort({created: "asc"}).exec()
         }
     }
 
-    const removeWorkspace = async (workspace : Workspace) : Promise<void> => {
-        const workspaceIndex = workspaces.value?.findIndex((o : Workspace) => o._id === workspace._id)
+    const removeWorkspace = async (workspace : RxWorkspaceDocument) : Promise<void> => {
+        const workspaceIndex = workspaces.value?.findIndex((o : RxWorkspaceDocument) => o._id === workspace._id)
 
         if(workspaceIndex > -1) {
             // Remove the workspace from store and storage
             workspaces.value.splice(workspaceIndex, 1);
             await db.workspaces.bulkRemove([workspace._id])
 
-            workspaces.value[workspaceIndex].columns?.forEach((columnId: string): void => {
-                // Remove from our columns array
-                const columnsIndex: number | boolean = columns.value.findIndex((o: Column) => o._id === columnId)
-
-                if (columnsIndex > -1) {
-                    removeColumn(columns[columnsIndex])
+            // Query for associated columns so that they can be removed
+            const columns = await db.columns.find({
+                selector: {
+                    workspace: workspace._id
                 }
-            })
+            }).exec()
+
+            // Remove the associated columns
+            await columns.forEach((column) =>  column.remove())
         }
     }
 
     const initDb = async () => {
         db = await useWorkspacesStorage()
 
-        workspaces.value = await db.workspaces.find().exec()
-        columns.value = await db.columns.find().exec()
+        workspaces.value = await db.workspaces.find().sort({created: "asc"}).exec()
+        columns.value = await db.columns.find().sort({created: "asc"}).exec()
 
-        db.workspaces.$.subscribe(async (event) => {
-            workspaces.value = await db.workspaces.find().exec()
+        await db.workspaces.$.subscribe(async (event) => {
+            workspaces.value = await db.workspaces.find().sort({created: "asc"}).exec()
         })
 
-        db.columns.$.subscribe(async (event) => {
-            columns.value = await db.columns.find().exec()
+        await db.columns.$.subscribe(async (event) => {
+            columns.value = await db.columns.find().sort({created: "asc"}).exec()
         })
     }
 
@@ -151,8 +171,6 @@ export const useRxStore = defineStore("rxStore", () => {
         activeWorkspace.value = {_id: "", name: ""}
         columns.value = []
     }
-
-
 
     return {
         db,
