@@ -60,7 +60,7 @@
         }
 
         // Save our workspace
-        await workspacesStore.setWorkspace(workspace)
+        await workspacesStore.addWorkspace(workspace)
 
         // Set as active workspace
         await workspacesStore.setActiveWorkspace(workspace._id)

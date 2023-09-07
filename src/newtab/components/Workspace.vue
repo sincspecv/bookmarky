@@ -11,6 +11,9 @@
     import { useRxStore } from "~stores/useRxStore";
 
     import type { Workspace, Column, Link } from "~lib/App"
+    import type { RxWorkspaceDocument, RxColumnDocument } from "~lib/RxDB";
+    import type {RxDocumentBase} from "rxdb";
+
 
     // Icons
     import { PlusIcon } from '@heroicons/vue/24/solid'
@@ -37,8 +40,8 @@
 
     await workspacesStore.setActiveWorkspace(route.params.id.toString())
 
-    const workspace : Ref<Workspace> = ref(await workspacesStore.getWorkspace(route.params.id.toString()))
-    const columns : Ref<Column[]> = ref(await workspacesStore.getWorkspaceColumns(workspace.value))
+    const workspace : Ref<RxWorkspaceDocument> = ref(await workspacesStore.getWorkspace(route.params.id.toString()))
+    const columns : Ref<RxColumnDocument[]> = ref(await workspacesStore.getWorkspaceColumns(workspace.value))
 
     const workspaceNameInput = ref(null);
     const showWorkspaceNameInput = ref(false);
@@ -88,6 +91,10 @@
         workspace.value = await workspacesStore.getWorkspace(route.params.id.toString())
         columns.value = await workspacesStore.getWorkspaceColumns(workspace.value)
 
+        await workspace.value.$.subscribe(async (event) => {
+            workspace.value = await workspacesStore.getWorkspace(workspace.value._id)
+        })
+
         // Set the current workspace as the active workspace
         await workspacesStore.setActiveWorkspace(route.params.id.toString())
     }
@@ -99,7 +106,15 @@
 
     const updateWorkspaceName = async () => {
         // await updateWorkspace()
-        await storage.setWorkspace(workspace.value)
+        // await storage.setWorkspace(workspace.value)
+
+        await workspace.value.modify((data) => {
+            data.name = workspaceNameInput.value.value
+            return data
+        })
+
+        // workspace.value.name = workspaceNameInput.value.value
+
         showWorkspaceNameInput.value = false
     }
 
@@ -316,7 +331,7 @@
                     :id="`workspace-name-${workspace._id}`"
                     class="input input-md input-bordered input-info w-full"
                     placeholder="Workspace Name"
-                    v-model="workspace.name"
+                    :value="workspace.name"
                 />
                 <button
                     v-if="!!workspace.name"

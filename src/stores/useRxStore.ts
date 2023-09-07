@@ -72,9 +72,9 @@ export const useRxStore = defineStore("rxStore", () => {
         }
     }
 
-    const setWorkspace = async (workspace : Workspace) : Promise<void> => {
+    const addWorkspace = async (workspace : Workspace) : Promise<void> => {
         if(!!workspace._id && !!workspace.name) {
-            await db.workspaces.upsert(workspace)
+            await db.workspaces.insert(workspace)
         }
     }
 
@@ -180,7 +180,7 @@ export const useRxStore = defineStore("rxStore", () => {
         hasActiveWorkspace,
         firstLoad,
         setActiveWorkspace,
-        setWorkspace,
+        addWorkspace,
         setColumn,
         setFirstLoad,
         initDb,
