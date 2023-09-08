@@ -31,8 +31,6 @@ export default async function useWorkspacesStorage() {
         ignoreDuplicate: true,
     });
 
-    // (window as any).db = db; // write to window for debugging
-
     // show leadership in title
     db.waitForLeadership().then(() => {
         console.log('isLeader now');

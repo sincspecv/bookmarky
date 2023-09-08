@@ -5,8 +5,6 @@
   import {storeToRefs} from "pinia";
   import { useRxStore } from "~stores/useRxStore";
   import useWorkspacesStorage from "~database";
-  // import { useWorkspacesStore } from "~stores/useWorkspacesStore"
-  // import useDatabase from "~database";
 
   // Icons
   import { PlusIcon } from '@heroicons/vue/24/solid'

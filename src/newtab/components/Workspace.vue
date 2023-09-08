@@ -5,9 +5,6 @@
     import WorkspaceColumn from "./WorkspaceColumn"
     import { v4 as uuidv4 } from "uuid"
     // import * as cheerio from "cheerio";
-    // import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
-    // import { useWorkspacesStore } from "~stores/useWorkspacesStore"
-    import {storeToRefs} from "pinia";
     import { useRxStore } from "~stores/useRxStore";
     import useWorkspacesStorage from "~database";
     import isURL from "validator/es/lib/isURL"
@@ -15,7 +12,6 @@
 
     import type { Workspace, Column, Link } from "~lib/App"
     import type { RxWorkspaceDocument, RxColumnDocument } from "~lib/RxDB";
-    import type {RxDocumentBase} from "rxdb";
 
 
     // Icons
@@ -34,7 +30,6 @@
         allow_underscores: true,
     }
 
-    // const workspacesStore = useWorkspacesStore()
     const workspacesStore = useRxStore()
     const db = await useWorkspacesStorage()
 
