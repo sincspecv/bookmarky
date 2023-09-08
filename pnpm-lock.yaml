@@ -35,6 +35,9 @@ dependencies:
   pinia:
     specifier: ^2.1.4
     version: 2.1.4(typescript@5.1.6)(vue@3.3.4)
+  pinia-plugin-persistedstate:
+    specifier: ^3.2.0
+    version: 3.2.0(pinia@2.1.4)
   plasmo:
     specifier: 0.82.1
     version: 0.82.1(postcss@8.4.26)
@@ -90,7 +93,7 @@ devDependencies:
     version: 10.4.14(postcss@8.4.26)
   daisyui:
     specifier: latest
-    version: 3.6.4
+    version: 3.7.3
   import:
     specifier: ^0.0.6
     version: 0.0.6
@@ -4025,8 +4028,8 @@ packages:
       '@babel/runtime': 7.9.6
     dev: false
 
-  /daisyui@3.6.4:
-    resolution: {integrity: sha512-8cFEkA2CaTKLUBvEU+9cTx6uvLSN2ZUq9fXxMkdiRS7QM79jBFv3klNkbUaPslmVh0eoeeCk0o98sjmfQ7/Cgg==}
+  /daisyui@3.7.3:
+    resolution: {integrity: sha512-gKlz3RwfaukZxf8nQZsDAZ7quUSi7F8HjGGB34tkHruvfQB9cgVDQsmqUqSQtkAJYvzbrg/3dLUa9+5jF4iC1A==}
     engines: {node: '>=16.9.0'}
     dependencies:
       colord: 2.9.3
@@ -5974,6 +5977,14 @@ packages:
   /pify@6.1.0:
     resolution: {integrity: sha512-KocF8ve28eFjjuBKKGvzOBGzG8ew2OqOOSxTTZhirkzH7h3BI1vyzqlR0qbfcDBve1Yzo3FVlWUAtCRrbVN8Fw==}
     engines: {node: '>=14.16'}
+    dev: false
+
+  /pinia-plugin-persistedstate@3.2.0(pinia@2.1.4):
+    resolution: {integrity: sha512-tZbNGf2vjAQcIm7alK40sE51Qu/m9oWr+rEgNm/2AWr1huFxj72CjvpQcIQzMknDBJEkQznCLAGtJTIcLKrKdw==}
+    peerDependencies:
+      pinia: ^2.0.0
+    dependencies:
+      pinia: 2.1.4(typescript@5.1.6)(vue@3.3.4)
     dev: false
 
   /pinia@2.1.4(typescript@5.1.6)(vue@3.3.4):

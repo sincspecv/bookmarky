@@ -25,6 +25,8 @@
     // Load activeWorkspace on first load
     const activeWorkspace = await workspacesStore.getActiveWorkspace
 
+    console.log(activeWorkspace)
+
     if(workspacesStore.firstLoad && !!activeWorkspace?._id) {
         workspacesStore.setFirstLoad(false)
         router.push({ name: "workspace", params: { id: activeWorkspace._id } })

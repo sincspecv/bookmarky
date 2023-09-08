@@ -5,6 +5,7 @@
     // Plugins
     import * as VueRouter from "vue-router"
     import {createPinia, storeToRefs} from 'pinia'
+    import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
     import * as Sentry from "@sentry/vue";
 
     // Components
@@ -48,8 +49,11 @@
             // });
 
             // Init our plugins
+            const pinia = createPinia()
+            pinia.use(piniaPluginPersistedstate)
+
             app.use(router)
-            app.use(createPinia())
+            app.use(pinia)
         }
     })
 </script>
