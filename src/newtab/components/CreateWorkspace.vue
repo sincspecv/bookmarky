@@ -59,7 +59,13 @@
         }
 
         // Save our workspace
-        await db.workspaces.upsert(workspace)
+        try {
+            await db.workspaces.bulkUpsert([workspace])
+        } catch (e) {
+            console.error(`${e.name} while adding workspace`)
+            console.error(e.message)
+            return;
+        }
 
         // Set as active workspace
         await workspacesStore.setActiveWorkspace(workspace._id)

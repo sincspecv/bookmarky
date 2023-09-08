@@ -387,9 +387,7 @@
         </div>
         <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
             <div :key="workspace._id" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
-                    <Suspense>
-                        <WorkspaceColumn @alert="showAlert" v-for="column in workspace.columns" :columnId="column"></WorkspaceColumn>
-                    </Suspense>
+                <WorkspaceColumn @alert="showAlert" v-for="column in workspace.columns" :columnId="column"></WorkspaceColumn>
                 <WorkspaceColumn v-if="!workspace.columns.length"></WorkspaceColumn>
                 <!-- Add Column -->
                 <div

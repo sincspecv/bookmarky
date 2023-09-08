@@ -1,4 +1,3 @@
-import { inject, readonly } from 'vue';
 import { createRxDatabase, addRxPlugin, removeRxDatabase } from 'rxdb';
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
 import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
@@ -28,7 +27,7 @@ export default async function useWorkspacesStorage() {
     const db : RxBookmarkyDatabase = await createRxDatabase({
         name: 'bookmarky',
         storage: getRxStorageDexie(),
-        eventReduce: true,
+        eventReduce: false,
         ignoreDuplicate: true,
     });
 
