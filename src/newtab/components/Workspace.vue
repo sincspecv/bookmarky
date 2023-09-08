@@ -83,6 +83,10 @@
         router.push({name: "create-workspace", replace: true})
     }
 
+    const setWorkspaceColumns = async () => {
+        columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
+    }
+
     /**
      * Load all of our workspace data
      */
@@ -97,7 +101,7 @@
         // Set workspace as active workspace so that the same workspace is loaded when new tab is open
         // await workspaceData.set("workspace", workspace)
         workspace.value = await db.workspaces.findOne(route.params.id.toString()).exec()
-        columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
+        await setWorkspaceColumns()
 
         await workspace.value.$.subscribe(async (event) => {
             workspace.value = await db.workspaces.findOne(workspace.value._id).exec()
@@ -130,26 +134,24 @@
         if(showModal) {
             deleteWorkspaceModal.value.showModal()
         } else {
-            const workspaceIndex = workspaces.value?.findIndex((o : RxWorkspaceDocument) => o._id === workspace.value._id)
+            // Query for associated columns so that they can be removed
+            const _columns = await db.columns.find({
+                selector: {
+                    workspace: workspace.value._id
+                }
+            }).exec()
 
-            if(workspaceIndex > -1) {
-                // Remove the workspace from store and storage
-                workspaces.value.splice(workspaceIndex, 1);
-                await db.workspaces.bulkRemove([workspace.value._id])
-
-                // Query for associated columns so that they can be removed
-                const columns = await db.columns.find({
-                    selector: {
-                        workspace: workspace.value._id
-                    }
-                }).exec()
-
-                // Remove the associated columns
-                await columns.forEach((column) =>  column.remove())
-            }
-
+            // We have to change route before removing the
+            // data in order to prevent an error caused by
+            // the missing data.
             closeDeleteWorkspaceModal()
-            router.push({name: "create-workspace"})
+            await router.push({name: "create-workspace"})
+
+            // Remove the associated columns
+            await db.columns.bulkRemove(_columns.map(c => c._id))
+
+            // Remove the workspace
+            await db.workspaces.bulkRemove([workspace.value._id])
         }
     }
 
@@ -179,8 +181,8 @@
             created: Date.now()
         }
 
-        // const _workspace = await db.workspaces.findOne(newColumn.workspace).exec()
-        await workspace.modify((data) => {
+        const _workspace = await db.workspaces.findOne(newColumn.workspace).exec()
+        await _workspace.modify((data) => {
             const columnIndex = data.columns.findIndex((c) => c._id === newColumn._id)
 
             if(columnIndex > -1) {
@@ -193,12 +195,11 @@
         })
 
         await db.columns.upsert(newColumn)
-
-        columns.value = await db.columns.find().sort({created: "asc"}).exec()
+        await setWorkspaceColumns()
     }
 
     const openAllCollections = async () : Promise<void> => {
-        columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
+        await setWorkspaceColumns()
         const hasLinks = columns.value.findIndex((column : Column) => !!column.links.length) > -1
 
         if(!hasLinks || !columns.value.length) {
@@ -347,7 +348,7 @@
             </div>
 
             <!-- Workspace Title -->
-            <h1 class="text-3xl my-10 font-medium" v-if="!showWorkspaceNameInput" v-html="workspace.name"></h1>
+            <h1 class="workspace-name text-3xl my-10 font-medium" v-if="!showWorkspaceNameInput" v-html="workspace.name"></h1>
             <!-- /Workspace Title -->
 
             <!-- Workspace Quick Actions -->

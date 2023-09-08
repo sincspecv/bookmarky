@@ -7,8 +7,8 @@ import WorkspaceColumnLink from "./WorkspaceColumnLink"
 import * as cheerio from "cheerio"
 import isURL from "validator/es/lib/isURL"
 import escape from "validator/es/lib/escape"
-import { useWorkspacesStore } from "~stores/useWorkspacesStore"
 import { useRxStore } from "~stores/useRxStore";
+import useWorkspacesStorage from "~database";
 import type { Workspace, Column, Link } from "~lib/App"
 
 
@@ -19,6 +19,7 @@ import { ArrowUpOnSquareStackIcon, BookmarkSquareIcon, PencilSquareIcon} from '@
 import { TrashIcon } from '@heroicons/vue/24/outline'
 import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/outline'
+import {RxColumnDocument} from "~lib/RxDB";
 
 // Configure our URL sanitation
 const isURLOptions = {
@@ -29,6 +30,7 @@ const isURLOptions = {
 
 const router = useRouter()
 const route = useRoute()
+const db = await useWorkspacesStorage()
 
 // Get our browser tabs
 const browserTabs = ref(await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "ftp://*/*", "file://*/*"]}))
@@ -40,7 +42,6 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 
 // Get our workspaces store
-// const workspacesStore = useWorkspacesStore()
 const workspacesStore = useRxStore()
 const activeWorkspace = await workspacesStore.getActiveWorkspace
 
@@ -59,8 +60,27 @@ const addLinkModal = ref(null)
 const textLink = reactive({url: "", title: "", description: "", favIconUrl: ""})
 
 // Init our column
-const emptyColumn : Column = {_id: "", title: "", workspace: activeWorkspace?._id, links: []}
-const column : Ref<Column> = ref(await workspacesStore.getColumnById(props.columnId))
+// Create a column if one isn't specified
+const columnId: string = !!props.columnId ? props.columnId : uuidv4()
+if(!props.columnId) {
+    const newColumn: Column = {
+        _id: columnId,
+        workspace: activeWorkspace?._id,
+        title: "",
+        links: [],
+        created: Date.now()
+    }
+
+    await db.columns.upsert(newColumn)
+    await db.workspaces.findOne(activeWorkspace?._id).exec().then(async (workspace) => {
+        await workspace.modify((data) => {
+            data.columns = data.columns.concat(columnId)
+            return data
+        })
+    })
+}
+
+const column : Ref<Column> = ref(await db.columns.findOne(columnId).exec())
 const showInput : Ref<boolean> = ref(!column.value.title)
 
 // Set up our reactivity
@@ -80,14 +100,14 @@ onMounted(() => {
 })
 
 
-const initColumn = async (columnId: string) => {
-    column.value = await workspacesStore.getColumnById(columnId)
-}
+// const initColumn = async (columnId: string) => {
+//     column.value = await db.columns.findOne(columnId).exec()
+// }
 
 // Check if we have a column
-if(!!props.columnId) {
-    await initColumn(props.columnId)
-}
+// if(!!props.columnId) {
+//     await initColumn(props.columnId)
+// }
 
 const updateColumnTitle = async () => {
     await column.value.modify((data) => {
@@ -108,8 +128,6 @@ const updateColumnTitle = async () => {
 }
 
 const updateColumn = async () => {
-    // await workspacesStore.setColumn(column.value)
-
     await column.value.modify((data) => {
         if(!column.value?._id) {
             data._id = uuidv4()
@@ -147,8 +165,28 @@ const hideTitleInput = () => {
     }
 }
 
-const removeColumn = () => {
-    workspacesStore.removeColumn(column.value)
+const removeColumn = async () : Promise<void> => {
+    // Find our workspace so that we can remove the column reference
+    const _workspaces = await db.workspaces.find({
+        selector: {
+            columns: column.value._id
+        }
+    }).exec()
+
+    // Remove the column reference
+    await _workspaces.forEach((_workspace) => {
+        _workspace.modify((data) => {
+            data.columns = data.columns.toSpliced(data.columns.findIndex((c) => c === column.value._id), 1)
+            return data
+        })
+    })
+
+    // Remove the column
+    const _column = await db.columns.findOne(column.value._id).exec()
+    _column.remove()
+
+    // Update our columns
+    // columns.value = await db.columns.find().sort({created: "asc"}).exec()
 }
 
 // Show the "Add A Link" modal

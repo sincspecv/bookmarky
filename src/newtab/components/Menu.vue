@@ -1,11 +1,11 @@
 <script setup lang="ts">
-  import { watch, ref } from 'vue'
+  import { watch, ref, nextTick } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { v4 as uuidv4 } from "uuid"
   import {storeToRefs} from "pinia";
   import { useRxStore } from "~stores/useRxStore";
+  import useWorkspacesStorage from "~database";
   // import { useWorkspacesStore } from "~stores/useWorkspacesStore"
-  // import useWorkspacesStorage from "~database";
   // import useDatabase from "~database";
 
   // Icons
@@ -14,34 +14,37 @@
   const router = useRouter()
   const route = useRoute()
   const workspacesStore = useRxStore()
+  const db = await useWorkspacesStorage()
 
-  if(!workspacesStore.workspaces?.length) {
-      await workspacesStore.initDb();
-  }
+  const { activeWorkspace } = storeToRefs(workspacesStore)
+  const workspaces = ref(await db.workspaces.find().sort({created: "asc"}).exec())
+  const updateKey = ref(Date.now());
 
-  const { workspaces, activeWorkspace } = storeToRefs(workspacesStore)
-  const updateKey = ref(uuidv4());
+  await db.workspaces.$.subscribe(async (event) => {
+      workspaces.value = await db.workspaces.find().sort({created: "asc"}).exec()
+      updateKey.value = Date.now()
+  })
 
   // Watch for changes and update the menu if necessary
-  // watch(() => route.params.id, async (toParams, prevParams) => {
+  watch(() => route.params.id, async (toParams, prevParams) => {
       // Clear our active workspace so that we don't get stuck on a single
       // workspace view. This will be re-set when we load a new workspace.
       // if(!!activeWorkspace.value) {
       //     await workspacesStore.setActiveWorkspace("")
       // }
 
-      // let renderFlag: boolean = false;
-      // if(route.query.hasOwnProperty("render")) {
-      //     renderFlag = !!route.query.render;
-      // }
+      let renderFlag: boolean = false;
+      if(route.query.hasOwnProperty("render")) {
+          renderFlag = !!route.query.render;
+      }
       // Only update if we're coming from the add a workspace route
-      // if((!!toParams && prevParams === undefined) || renderFlag) {
-      //     // workspaces.value = await workspaceData.get("workspaces");
-      //
-      //     // Update the key to force Vue to reload component
-      //     updateKey.value = uuidv4();
-      // }
-  // })
+      if((!!toParams && prevParams === undefined) || renderFlag) {
+          // workspaces.value = await workspaceData.get("workspaces");
+
+          // Update the key to force Vue to reload component
+          updateKey.value = uuidv4();
+      }
+  })
 
 
 </script>

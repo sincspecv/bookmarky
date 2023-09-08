@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { reactive, ref, onMounted } from "vue"
+    import { reactive, ref, onMounted, nextTick } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import { v4 as uuidv4 } from "uuid"
     import escape from "validator/es/lib/escape"
@@ -59,7 +59,7 @@
         }
 
         // Save our workspace
-        await db.workspaces.insert(workspace)
+        await db.workspaces.upsert(workspace)
 
         // Set as active workspace
         await workspacesStore.setActiveWorkspace(workspace._id)
