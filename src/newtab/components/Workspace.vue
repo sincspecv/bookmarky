@@ -46,6 +46,12 @@
     const workspace : Ref<RxWorkspaceDocument> = ref(await db.workspaces.findOne(route.params.id.toString()).exec())
     const columns : Ref<RxColumnDocument[]> = ref(await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec())
 
+    const columnsQuery : Ref<RxColumnDocument[]> = db.columns.find({ selector: { workspace: workspace.value._id } })
+    await columnsQuery.$.subscribe(async (_columns) => {
+        columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
+    })
+
+
     const workspaceNameInput = ref(null);
     const showWorkspaceNameInput = ref(false);
     const deleteWorkspaceModal = ref(null);
@@ -382,7 +388,7 @@
         </div>
         <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
             <div :key="workspace._id" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
-                <WorkspaceColumn @alert="showAlert" v-for="column in workspace.columns" :columnId="column"></WorkspaceColumn>
+                <WorkspaceColumn @alert="showAlert" v-for="column in columns" :key="column._id" :columnId="column._id"></WorkspaceColumn>
                 <WorkspaceColumn v-if="!workspace.columns.length"></WorkspaceColumn>
                 <!-- Add Column -->
                 <div
