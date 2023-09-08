@@ -388,19 +388,20 @@
         </div>
         <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
             <Suspense>
-            <div :key="columns.length" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
-                <WorkspaceColumn @alert="showAlert" v-for="column in columns" :key="column._id" :columnId="column._id"></WorkspaceColumn>
-                <!-- Add Column -->
-                <button
-                    v-if="workspace.columns.length"
-                    @click="addColumn"
-                    class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
-                >
-                    <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
-                    <span class="sr-only">Add new column</span>
-                </button>
-                <!-- /Add Column -->
-            </div>
+                <div :key="columns.length" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
+                    <WorkspaceColumn @alert="showAlert" v-for="column in columns" :key="column._id" :columnId="column._id"></WorkspaceColumn>
+                    <WorkspaceColumn v-if="!workspace.columns.length"></WorkspaceColumn>
+                    <!-- Add Column -->
+                    <button
+                        v-if="workspace.columns.length"
+                        @click="addColumn"
+                        class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
+                    >
+                        <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
+                        <span class="sr-only">Add new column</span>
+                    </button>
+                    <!-- /Add Column -->
+                </div>
                 <template #fallback>
                     <div class="w-full h-full flex justify-center">
                         <span class="loading loading-bars loading-lg"></span>
