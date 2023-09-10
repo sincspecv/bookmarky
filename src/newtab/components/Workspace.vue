@@ -54,7 +54,9 @@
 
     const columnsQuery : Ref<RxColumnDocument[]> = await db.columns.find({ selector: { workspace: workspace.value._id } })
     await columnsQuery.$.subscribe(async (_columns) => {
-        columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
+        if(!!workspace.value?._id) {
+            columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
+        }
     })
 
 

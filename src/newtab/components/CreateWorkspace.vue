@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { reactive, ref, onMounted, nextTick } from "vue"
+    import { reactive, ref, onMounted, toRef } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import { v4 as uuidv4 } from "uuid"
     import escape from "validator/es/lib/escape"
@@ -20,7 +20,8 @@
         router.push({ name: "workspace", params: { id: activeWorkspace._id } })
     }
 
-    let workspace = reactive({ _id: "", name: "", columns: [], created: 0 })
+    let workspace = { _id: "", name: "", columns: [], created: 0 }
+    const workspaceName = toRef(workspace.name)
 
     // Set our focus on the input on initial load
     const workspaceNameInput = ref(null);
@@ -31,6 +32,7 @@
 
     const addWorkspace = async () : Promise<void> => {
         // Make sure we have a workspace name
+        // TODO: Implement better error handling
         if(!workspace.name) {
             return;
         }
@@ -48,7 +50,6 @@
             workspace.created = Date.now()
         }
 
-        console.log(workspace)
         // Save our workspace
         try {
             await db.workspaces.bulkUpsert([workspace])
@@ -73,7 +74,7 @@
                     Enter a unique name for your workspace
                 </label>
                 <input type="text" id="workspaceName" name="workspaceName" ref="workspaceNameInput" placeholder="Workspace Name" class="input input-lg input-bordered w-full" v-model="workspace.name" />
-                <button type="submit" class="btn enabled:btn-primary disabled:btn-active" :disabled="!workspace.name">Add Workspace</button>
+                <button type="submit" class="btn enabled:btn-primary disabled:btn-active">Add Workspace</button>
             </form>
         </div>
     </div>
