@@ -35,6 +35,8 @@ export const useRxStore = defineStore("rxStore", () => {
 
         if(!!workspaceId) {
             activeWorkspace.value = await db.workspaces?.findOne(workspaceId).exec()
+        } else {
+            activeWorkspace.value = null
         }
     }
 

@@ -62,8 +62,9 @@ const textLink = reactive({url: "", title: "", description: "", favIconUrl: ""})
 // Init our column
 // Create a column if one isn't specified
 const columnId: string = !!props.columnId ? props.columnId : uuidv4()
+
 if(!props.columnId) {
-    const newColumn: Column = {
+    const newColumn = {
         _id: columnId,
         workspace: activeWorkspace?._id,
         title: "",
@@ -371,6 +372,7 @@ const importOpenTabs = async () => {
 </script>
 
 <template>
+
     <!-- Column -->
     <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column._id">
         <!-- Column Title -->
@@ -425,23 +427,30 @@ const importOpenTabs = async () => {
         </div>
         <!-- /Column Title -->
         <!-- Links Container -->
-        <div class="relative overflow-y-scroll" style="height: calc(100% - 111px)">
-            <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column._id">
-                <!-- Links -->
-                <WorkspaceColumnLink v-for="link in column.links" :link="link" @remove="removeLink" />
-                <!-- /Links -->
-                <!-- Add Link Button -->
-                <a class="w-full mb-xxj btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
-                   title="Add a new link"
-                   role="button"
-                   @click="showAddLinkModal"
-                >
-                    <PlusIcon class="stroke-current stroke-0 w-32 mx-auto" />
-                    <span class="sr-only">Add new link</span>
-                </a>
-                <!-- /Add Link Button -->
+        <Suspense>
+            <div class="relative overflow-y-scroll" style="height: calc(100% - 111px)">
+                <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column._id">
+                    <!-- Links -->
+                    <WorkspaceColumnLink v-for="link in column.links" :key="link.created" :link="link" @remove="removeLink" />
+                    <!-- /Links -->
+                    <!-- Add Link Button -->
+                    <a class="w-full mb-xxj btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
+                       title="Add a new link"
+                       role="button"
+                       @click="showAddLinkModal"
+                    >
+                        <PlusIcon class="stroke-current stroke-0 w-32 mx-auto" />
+                        <span class="sr-only">Add new link</span>
+                    </a>
+                    <!-- /Add Link Button -->
+                </div>
             </div>
-        </div>
+            <template #fallback>
+                <div class="w-full h-full flex justify-center">
+                    <span class="loading loading-bars loading-lg"></span>
+                </div>
+            </template>
+        </Suspense>
         <!-- /Links Container -->
     </div>
     <!-- /Column -->
@@ -494,6 +503,7 @@ const importOpenTabs = async () => {
         </div>
     </dialog>
     <!-- /Add Link Modal -->
+
 </template>
 
 <style scoped>

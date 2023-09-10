@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build && pnpm run sentry:sourcemaps",
+    "debug": "plasmo dev --verbose",
     "package": "plasmo package",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org the-fancy-robot-llc --project javascript-vue ./build && sentry-cli sourcemaps upload --org the-fancy-robot-llc --project javascript-vue ./build"
   },
