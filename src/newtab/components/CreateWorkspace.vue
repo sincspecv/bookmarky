@@ -48,6 +48,7 @@
             workspace.created = Date.now()
         }
 
+        console.log(workspace)
         // Save our workspace
         try {
             await db.workspaces.bulkUpsert([workspace])

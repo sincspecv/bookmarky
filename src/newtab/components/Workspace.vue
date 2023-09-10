@@ -398,8 +398,11 @@
             <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
                 <Suspense>
                     <ul :key="columns?.length" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10 list-none m-0">
-                        <li  v-for="column in columns" :key="column._id">
-                            <WorkspaceColumn @alert="showAlert" :columnId="column._id"></WorkspaceColumn>
+                        <li v-for="column in columns" :key="column._id">
+                            <WorkspaceColumn @alert="showAlert" :columnId="column._id" />
+                        </li>
+                        <li  v-if="!columns.length">
+                            <WorkspaceColumn />
                         </li>
                         <li>
                             <!-- Add Column -->
