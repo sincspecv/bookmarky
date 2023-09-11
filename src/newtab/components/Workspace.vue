@@ -22,6 +22,8 @@
     import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
     import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
     import { BookmarkSquareIcon } from '@heroicons/vue/24/outline'
+    import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+    import { ArrowRightIcon } from '@heroicons/vue/24/outline'
 
     // Configure our URL sanitation
     const isURLOptions = {
@@ -65,6 +67,10 @@
     const deleteWorkspaceModal = ref(null);
     const alertModal = ref(null)
     const alertModalMessage = ref("")
+    const columnsContainer = ref(null)
+
+    // For the columns carousel functionality
+    let scrollIndex = 0
 
 
     // Make our dropdowns go away after clicking a menu item
@@ -341,6 +347,40 @@
         }
     })
 
+    const scrollColumns = (direction: string) => {
+        if(!columnsContainer.value) {
+            return;
+        }
+
+        const columnItems = columnsContainer.value.querySelectorAll('.column-item')
+
+        // Get the column closest to the left edge
+        const nodeList = Array.from(columnItems)
+        const closest = nodeList.reduce((prev, curr) => {
+            return Math.abs(curr.getBoundingClientRect().x - 18) < Math.abs(prev.getBoundingClientRect().x - 18) ? curr : prev
+        })
+
+        // Determine what the next column is
+        let dataIndex: string|number = closest.dataset.index
+
+        if(direction === 'right') {
+            dataIndex = closest.dataset.index > 0 ? parseInt(closest.dataset.index) - 1 : closest.dataset.index
+        }
+
+        if(direction === 'left') {
+            dataIndex = closest.dataset.index < columns.value.length ? parseInt(closest.dataset.index) + 1 : closest.dataset.index
+        }
+
+        const nextColumn = columnsContainer.value.querySelector(`[data-index='${dataIndex}']`)
+
+        // Scroll to the next column
+        columnsContainer.value.parentNode.scrollTo({
+            top: 0,
+            left: nextColumn.offsetLeft,
+            behavior:'smooth'
+        })
+    }
+
 </script>
 
 <template>
@@ -397,16 +437,24 @@
                 </button>
             </form>
         </div>
-            <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
+            <div v-if="!!workspace._id" class="flex flex-1 flex-row flex-nowrap overflow-y-auto relative" id="columns-container">
+                <div class="py-10 h-full sticky z-[1] top-0 left-0 dark:bg-gray-800">
+                    <button
+                        @click="scrollColumns('right')"
+                        class="h-full w-content p-4 mr-10 rounded-box drop-shadow-md bg-neutral hover:bg-primary hover:opacity-100"
+                    >
+                        <ArrowLeftIcon class="stroke-current block mx-auto w-24" />
+                    </button>
+                </div>
                 <Suspense>
-                    <ul :key="columns?.length" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10 list-none m-0">
-                        <li v-for="column in columns" :key="column._id">
+                    <ul :key="columns.length" ref="columnsContainer" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10 list-none m-0" id="columns-container">
+                        <li v-for="(column, index) in columns" :key="column._id" :data-index="index" class="column-item">
                             <WorkspaceColumn @alert="showAlert" :columnId="column._id" />
                         </li>
-                        <li  v-if="!columns.length">
+                        <li  v-if="!columns.length" class="column-item">
                             <WorkspaceColumn />
                         </li>
-                        <li>
+                        <li :data-index="columns.length" class="column-item" id="add-column-item">
                             <!-- Add Column -->
                             <button
                                 @click="addColumn"
@@ -424,6 +472,14 @@
                         </div>
                     </template>
                 </Suspense>
+                <div class="py-10 h-full sticky z-[1] top-0 right-0 dark:bg-gray-800">
+                    <button
+                        @click="scrollColumns('left')"
+                        class="h-full w-content p-6 ml-10 rounded-box drop-shadow-md bg-neutral hover:bg-primary"
+                    >
+                        <ArrowRightIcon class="stroke-current block mx-auto w-24" />
+                    </button>
+                </div>
             </div>
 
         <!-- Delete Workspace Modal -->
