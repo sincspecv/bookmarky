@@ -1,16 +1,18 @@
 <script setup lang="ts">
     import * as browser from "webextension-polyfill"
-    import { reactive, watch, ref, onMounted, nextTick } from "vue"
+    import { watch, ref, onMounted, nextTick, Ref } from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import { v4 as uuidv4 } from "uuid"
-    import { Storage } from "@plasmohq/storage"
-    import * as _ from "lodash-es"
-    import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
+    // import * as cheerio from "cheerio";
+    import { useRxStore } from "~stores/useRxStore";
+    import useWorkspacesStorage from "~database";
+    import isURL from "validator/es/lib/isURL"
+    import escape from "validator/es/lib/escape"
 
-    import { useWorkspacesStore } from "~stores/useWorkspacesStore"
+    import type { Workspace, Column, Link } from "~lib/App"
+    import type { RxWorkspaceDocument, RxColumnDocument } from "~lib/RxDB";
 
-    const store = useWorkspacesStore()
 
     // Icons
     import { PlusIcon } from '@heroicons/vue/24/solid'
@@ -20,12 +22,43 @@
     import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
     import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
     import { BookmarkSquareIcon } from '@heroicons/vue/24/outline'
-    import * as cheerio from "cheerio";
 
-    const workspaceData = new Storage()
-    const workspaces = ref(await workspaceData.get("workspaces"));
-    const workspace = reactive({ name: "", id: "", columns: [] })
-    const updateColumns = ref(Date.now())
+    // Configure our URL sanitation
+    const isURLOptions = {
+        protocols: ['http', 'https', 'ftp', 'file'],
+        require_protocol: true,
+        allow_underscores: true,
+    }
+
+    const workspacesStore = useRxStore()
+    const db = await useWorkspacesStorage()
+
+    const router = useRouter()
+    const route = useRoute()
+
+    // If we don't have an ID we can't load our workspace
+    if(!route.params.id.length) {
+      router.push({name: "create-workspace", replace: true})
+    }
+
+    const workspace : Ref<RxWorkspaceDocument> = ref(await db.workspaces.findOne(route.params.id.toString()).exec())
+
+    // If we don't have a valid workspace we can't load our workspace
+    if(!workspace.value) {
+        router.push({name: "create-workspace", replace: true})
+    }
+
+    await workspacesStore.setActiveWorkspace(route.params.id.toString())
+
+    const columns : Ref<RxColumnDocument[]> = ref(await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec())
+
+    const columnsQuery : Ref<RxColumnDocument[]> = await db.columns.find({ selector: { workspace: workspace.value._id } })
+    await columnsQuery.$.subscribe(async (_columns) => {
+        if(!!workspace.value?._id) {
+            columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
+        }
+    })
+
 
     const workspaceNameInput = ref(null);
     const showWorkspaceNameInput = ref(false);
@@ -33,8 +66,6 @@
     const alertModal = ref(null)
     const alertModalMessage = ref("")
 
-    const router = useRouter()
-    const route = useRoute()
 
     // Make our dropdowns go away after clicking a menu item
     onMounted(() => {
@@ -49,6 +80,9 @@
                 }
             })
         })
+
+        // Make sure firstLoad is set to false
+        workspacesStore.setFirstLoad(false)
     })
 
     /**
@@ -58,64 +92,32 @@
         router.push({name: "create-workspace", replace: true})
     }
 
+    const setWorkspaceColumns = async () => {
+        columns.value = await db.columns.find({ selector: { workspace: workspace.value._id } }).sort({created: "asc"}).exec()
+    }
+
     /**
      * Load all of our workspace data
      */
-    const getWorkspace = async () => {
+    const loadWorkspace = async () => {
+
         // Make sure we have a workspace id and redirect
         // to the workspace creation view if not.
-        if(!route.params.id) {
-            redirectToCreateWorkspace()
-        }
-
-        // Make sure we have a workspaces array to work with
-        if (!workspaces.value) {
-            await workspaceData.set("workspaces", []);
-        }
-
-        // Make sure we have updated workspace data
-        workspaces.value = await workspaceData.get("workspaces");
-
-        // Check if our workspace exists
-        const workspaceObject = _.find(workspaces.value, {id: route.params.id})
-        const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
-
-        // We have it. Let's set up our reactive variables
-        if(workspacesIndex > -1) {
-            Object.entries(workspace).forEach(_workspace => {
-                const index = _.head(_workspace)
-
-                // Get rid of null values in any arrays
-                if(Array.isArray(workspaceObject[index])) {
-                    workspaceObject[index].forEach((item, i) => {
-                        if(item === null) {
-                            workspaceObject[index].splice(i, 1);
-                        }
-                    })
-                }
-
-                workspace[index] = workspaceObject[index]
-            })
-        } else {
+        if(!route.params.id.length) {
             redirectToCreateWorkspace()
         }
 
         // Set workspace as active workspace so that the same workspace is loaded when new tab is open
-        await workspaceData.set("activeWorkspace", workspace)
+        // await workspaceData.set("workspace", workspace)
+        workspace.value = await db.workspaces.findOne(route.params.id.toString()).exec()
+        await setWorkspaceColumns()
 
-        // Re-render our columns view
-        updateColumns.value = Date.now();
-    }
+        await workspace.value.$.subscribe(async (event) => {
+            workspace.value = await db.workspaces.findOne(workspace.value._id).exec()
+        })
 
-    const updateWorkspace = async () => {
-        // Check if our workspace exists
-        const workspaceObject = _.find(workspaces.value, {id: workspace.id})
-        const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
-
-        if(workspacesIndex > -1) {
-            workspaces.value[workspacesIndex] = workspace
-            await workspaceData.set(`workspaces`, workspaces.value)
-        }
+        // Set the current workspace as the active workspace
+        await workspacesStore.setActiveWorkspace(route.params.id.toString())
     }
 
     const focusWorkspaceNameInput = async () => {
@@ -124,7 +126,16 @@
     }
 
     const updateWorkspaceName = async () => {
-        await updateWorkspace()
+        // await updateWorkspace()
+        // await storage.setWorkspace(workspace.value)
+
+        await workspace.value.modify((data) => {
+            data.name = workspaceNameInput.value.value
+            return data
+        })
+
+        // workspace.value.name = workspaceNameInput.value.value
+
         showWorkspaceNameInput.value = false
     }
 
@@ -132,20 +143,27 @@
         if(showModal) {
             deleteWorkspaceModal.value.showModal()
         } else {
-            // Check if our workspace exists
-            const workspaceObject = _.find(workspaces.value, {id: route.params.id})
-            const workspacesIndex = _.indexOf(workspaces.value, workspaceObject);
+            // Remove associated columns
+            const _columns = await db.columns.find({
+                selector: {
+                    workspace: workspace.value._id
+                }
+            }).exec()
 
-            // Remove it
-            if(workspacesIndex > -1) {
-                workspaces.value.splice(workspacesIndex, 1)
-                await workspaceData.set(`workspaces`, workspaces.value)
+            // Set active workspace to null
+            await workspacesStore.setActiveWorkspace(null)
 
-                // redirectToCreateWorkspace()
-                router.replace({name: "create-workspace", query: {render: true}})
-            }
-
+            // We have to change route before removing the
+            // data in order to prevent an error caused by
+            // the missing workspace data.
             closeDeleteWorkspaceModal()
+            await router.push({name: "create-workspace"})
+
+            // Remove the associated columns
+            await db.columns.bulkRemove(_columns.map(c => c._id))
+
+            // Remove the workspace
+            await db.workspaces.bulkRemove([workspace.value._id])
         }
     }
 
@@ -163,26 +181,47 @@
         }, 100)
     }
 
-    const addColumn = () => {
-        workspace.columns.push({title: "", id: uuidv4(), links: []})
-    }
-
-    const openAllCollections = () => {
-        if(!workspace.columns.length) {
-            alertModalMessage.value = "No collection with links to open."
-            alertModal.value.showModal();
-
-            return false
+    /**
+     * Add new column to workspace.
+     */
+    const addColumn = async () => {
+        const newColumn : Column = {
+            _id: uuidv4(),
+            workspace: workspace.value._id,
+            title: "",
+            links: [],
+            created: Date.now()
         }
 
-        workspace.columns.forEach(async column => {
-            if(!column.links.length) {
-                alertModalMessage.value = "No collection with links to open."
-                alertModal.value.showModal();
+        const _workspace = await db.workspaces.findOne(newColumn.workspace).exec()
+        await _workspace.modify((data) => {
+            const columnIndex = data.columns.findIndex((c) => c._id === newColumn._id)
 
-                return false
+            if(columnIndex > -1) {
+                Object.assign(data.columns[columnIndex], newColumn._id)
+            } else {
+                data.columns = data.columns.concat(newColumn._id)
             }
 
+            return data
+        })
+
+        await db.columns.upsert(newColumn)
+        await setWorkspaceColumns()
+    }
+
+    const openAllCollections = async () : Promise<void> => {
+        await setWorkspaceColumns()
+        const hasLinks = columns.value.findIndex((column : Column) => !!column.links.length) > -1
+
+        if(!hasLinks || !columns.value.length) {
+            alertModalMessage.value = "No collection with links to open."
+            alertModal.value.showModal()
+
+            return
+        }
+
+        columns.value.forEach((column : Column) => {
             let tabIds = []
 
             // First we have to open all of our links and then add the tab ID
@@ -190,7 +229,12 @@
             // and add the links to it using the array of tab IDs. After the
             // group is created and all the tabs have been added to it, we can
             // lastly add the column name as the tab name.
-            await Promise.all(column.links.map(async link => {
+            Promise.all(column.links.map(async link => {
+                // If we don't have a link then there is no need to proceed
+                if(!link.url?.length || !isURL(link.url, isURLOptions)) {
+                  return;
+                }
+
                 // Open our link
                 const tab = await browser.tabs.create({
                     url: link.url
@@ -221,46 +265,61 @@
             return false
         }
 
+        const newColumns = []
+
         // Loop through all the groups, then create a new
-        // column and add all the tabs to each column
-        tabGroups.map(async group => {
+        // column and add all the tabs within the group to
+        // each column as a link
+        tabGroups.forEach((group) => {
             // Initialize our new column
-            const column = {title: "", id: "", links: []}
+            const column : Column = {
+                _id: uuidv4(),
+                title: escape(group.title),
+                workspace: workspace.value._id,
+                links: [],
+                created: Date.now()
+            }
 
-            column.title = group.title;
+            // We need a title for our column, let's make
+            // one up in the event that we didn't get one
+            // from the group
+            if(!column.title.length) {
+              column.title = `Collection ${(workspace.value.columns.length + 1).toString()}`
+            }
 
-            await browser.tabs.query({groupId: group.id})
+            // Loop through all the tabs in the group
+            // and add each tab to our column
+            browser.tabs.query({groupId: group.id})
                 .then(async tabs => {
-                    // Loop through our tabs and build our links array
+                    // Loop through our tabs and grab the links
                     await Promise.all(tabs.map(async tab => {
-                        const html = await fetch(tab.url).then(response => response.text())
-                        const $ = cheerio.load(html);
-                        const description = $('meta[name*="description"]').attr('content')
+                        // const html = await fetch(tab.url).then(response => response.text())
+                        // const $ = cheerio.load(html);
+                        // const description = $('meta[name*="description"]').attr('content')
+                        const link : Link = {
+                          _id: uuidv4(),
+                          column: column._id,
+                          title: escape(tab.title),
+                          url: isURL(tab.url, isURLOptions) ? tab.url : "",
+                          favIconUrl: isURL(tab.favIconUrl, isURLOptions) ? tab.favIconUrl : "",
+                          description: "",
+                          created: Date.now(),
+                        }
 
-                        column.links.push({
-                            id: uuidv4(),
-                            title: tab.title,
-                            url: tab.url,
-                            favIconUrl: tab.favIconUrl,
-                            description: !!description ? description : "No description",
-                            createdOn: Date.now(),
-                        })
+                        // Add the link to our column
+                        column.links.push(link)
                     }))
+
+                    newColumns.push(column)
                 })
-                .then(() => {
-                    // We need a title for our column, let's make
-                    // one up in the event that we didn't get one
-                    // from the group
-                    if(!column.title.length) {
-                        column.title = `Column ${(workspace.columns.length + 1).toString()}`
-                    }
-
-                    // Lastly, we need an ID
-                    column.id = uuidv4()
-
+                .then(async () => {
                     // Column data is built. Send it.
-                    workspace.columns.push(column)
-                    updateWorkspace()
+                    await db.columns.bulkUpsert(newColumns)
+
+                    await workspace.value.modify((data) => {
+                        data.columns = data.columns.concat(newColumns.map((column) => column._id))
+                        return data
+                    })
                 })
         })
     }
@@ -271,15 +330,14 @@
     }
 
     // Load our workspace
-    getWorkspace();
+    loadWorkspace();
 
     // Watch for our workspace id to change so that we can update the view
     watch(() => route.params.id, async (toParams, prevParams) => {
         // Update if the id param has changed
         if(!!toParams) {
-
             // Load our updated workspace
-            await getWorkspace();
+            await loadWorkspace();
         }
     })
 
@@ -302,7 +360,7 @@
             </div>
 
             <!-- Workspace Title -->
-            <h1 class="text-3xl my-10 font-medium" v-if="!showWorkspaceNameInput" v-html="workspace.name"></h1>
+            <h1 class="workspace-name text-3xl my-10 font-medium" v-if="!showWorkspaceNameInput" v-html="workspace.name"></h1>
             <!-- /Workspace Title -->
 
             <!-- Workspace Quick Actions -->
@@ -321,14 +379,14 @@
             <!-- /Workspace Quick Actions -->
 
             <form class="relative my-4 w-full max-w-md" v-if="!!showWorkspaceNameInput" @submit.prevent="updateWorkspaceName">
-                <label :for="`workspace-name-${workspace.id}`" class="sr-only">Workspace Name</label>
+                <label :for="`workspace-name-${workspace._id}`" class="sr-only">Workspace Name</label>
                 <input
                     ref="workspaceNameInput"
-                    :name="`workspace-name-${workspace.id}`"
-                    :id="`workspace-name-${workspace.id}`"
+                    :name="`workspace-name-${workspace._id}`"
+                    :id="`workspace-name-${workspace._id}`"
                     class="input input-md input-bordered input-info w-full"
                     placeholder="Workspace Name"
-                    v-model="workspace.name"
+                    :value="workspace.name"
                 />
                 <button
                     v-if="!!workspace.name"
@@ -339,30 +397,48 @@
                 </button>
             </form>
         </div>
-        <div v-if="!!workspace.id" class="flex-1 overflow-y-auto">
-            <div :key="updateColumns" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10">
-                <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" @alert="showAlert" v-for="column in workspace.columns" :column="column"></WorkspaceColumn>
-                <WorkspaceColumn :workspace="workspace" @update="updateWorkspace" v-if="!workspace.columns.length"></WorkspaceColumn>
-                <!-- Add Column -->
-                <div
-                    v-if="workspace.columns.length"
-                    @click="addColumn"
-                    class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
-                    role="button"
-                >
-                    <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
-                    <span class="sr-only">Add new column</span>
-                </div>
-                <!-- /Add Column -->
+            <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
+                <Suspense>
+                    <ul :key="columns?.length" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10 list-none m-0">
+                        <li v-for="column in columns" :key="column._id">
+                            <WorkspaceColumn @alert="showAlert" :columnId="column._id" />
+                        </li>
+                        <li  v-if="!columns.length">
+                            <WorkspaceColumn />
+                        </li>
+                        <li>
+                            <!-- Add Column -->
+                            <button
+                                @click="addColumn"
+                                class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
+                            >
+                                <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
+                                <span class="sr-only">Add new column</span>
+                            </button>
+                            <!-- /Add Column -->
+                        </li>
+                    </ul>
+                    <template #fallback>
+                        <div class="w-full h-full flex justify-center">
+                            <span class="loading loading-bars loading-lg"></span>
+                        </div>
+                    </template>
+                </Suspense>
             </div>
-        </div>
 
         <!-- Delete Workspace Modal -->
-        <dialog :id="`${workspace.id}_delete_prompt`" class="modal" v-if="!!workspace.id" ref="deleteWorkspaceModal">
+        <dialog :id="`${workspace._id}_delete_prompt`" class="modal" v-if="!!workspace._id" ref="deleteWorkspaceModal">
             <div class="modal-box w-full max-w-max">
                 <h2 class="font-bold text-lg">Are you sure?</h2>
                 <div class="alert alert-warning my-10">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                      <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
                     <span class="font-bold">WARNING: This workspace will be deleted permanently and all data will be lost!</span>
                 </div>
 
@@ -375,7 +451,7 @@
         <!-- /Delete Workspace Modal -->
 
         <!-- Alert Modal -->
-        <dialog :id="`${workspace.id}_alert_prompt`" class="modal" ref="alertModal">
+        <dialog :id="`${workspace._id}_alert_prompt`" class="modal" ref="alertModal">
             <div class="modal-box w-full max-w-max min-w-50">
                 <strong class="pb-20 text-xl">{{alertModalMessage}}</strong>
 

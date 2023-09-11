@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import * as browser from "webextension-polyfill"
-import { reactive, ref, onMounted, nextTick } from "vue"
+import {reactive, ref, onMounted, nextTick, Ref} from "vue"
 import { v4 as uuidv4 } from "uuid"
-import { Storage } from "@plasmohq/storage"
-import * as _ from "lodash-es"
 import {useRoute, useRouter} from "vue-router";
 import WorkspaceColumnLink from "./WorkspaceColumnLink"
 import * as cheerio from "cheerio"
 import isURL from "validator/es/lib/isURL"
 import escape from "validator/es/lib/escape"
+import { useRxStore } from "~stores/useRxStore";
+import useWorkspacesStorage from "~database";
+import type { Workspace, Column, Link } from "~lib/App"
 
 
 // Icons
@@ -18,7 +19,9 @@ import { ArrowUpOnSquareStackIcon, BookmarkSquareIcon, PencilSquareIcon} from '@
 import { TrashIcon } from '@heroicons/vue/24/outline'
 import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
 import { ExclamationCircleIcon } from '@heroicons/vue/24/outline'
+import {RxColumnDocument} from "~lib/RxDB";
 
+// Configure our URL sanitation
 const isURLOptions = {
     protocols: ['http', 'https', 'ftp', 'file'],
     require_protocol: true,
@@ -27,6 +30,7 @@ const isURLOptions = {
 
 const router = useRouter()
 const route = useRoute()
+const db = await useWorkspacesStorage()
 
 // Get our browser tabs
 const browserTabs = ref(await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "ftp://*/*", "file://*/*"]}))
@@ -36,16 +40,16 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     browserTabs.value = await browser.tabs.query({currentWindow: true, url: ["https://*/*", "http://*/*", "file://*/*"]});
 })
 
+
+// Get our workspaces store
+const workspacesStore = useRxStore()
+const activeWorkspace = await workspacesStore.getActiveWorkspace
+
 // Collect our props from the parent component
-const props = defineProps(['workspace', 'column'])
+const props = defineProps(['columnId'])
 
 // And our emits
 const emits = defineEmits(['update', 'alert'])
-
-// Make sure we have a workspace and redirect if not
-if(!props.workspace) {
-    router.push({name: "create-workspace", replace: true})
-}
 
 // Error object
 const errorMessages = reactive({textLinkInput: ""})
@@ -56,18 +60,34 @@ const addLinkModal = ref(null)
 const textLink = reactive({url: "", title: "", description: "", favIconUrl: ""})
 
 // Init our column
-const column = reactive({title: "", id: "", links: []})
-const showInput = ref(!column.title)
+// Create a column if one isn't specified
+const columnId: string = !!props.columnId ? props.columnId : uuidv4()
 
-// Check if we have a column
-if(!!props.column) {
-    Object.entries(props.column).forEach(_column => {
-        const index = _.head(_column)
-        column[index] = props.column[index]
+if(!props.columnId) {
+    const newColumn = {
+        _id: columnId,
+        workspace: activeWorkspace?._id,
+        title: "",
+        links: [],
+        created: Date.now()
+    }
+
+    await db.columns.upsert(newColumn)
+    await db.workspaces.findOne(activeWorkspace?._id).exec().then(async (workspace) => {
+        await workspace.modify((data) => {
+            data.columns = data.columns.concat(columnId)
+            return data
+        })
     })
-
-    showInput.value = !column.title;
 }
+
+const column : Ref<Column> = ref(await db.columns.findOne(columnId).exec())
+const showInput : Ref<boolean> = ref(!column.value.title)
+
+// Set up our reactivity
+column.value.$.subscribe(doc => {
+    column.value = doc
+})
 
 /**
  * Focus on the title input if it is visible on mount
@@ -80,26 +100,50 @@ onMounted(() => {
     }
 })
 
-const updateColumn = () => {
-    if(!column.id) {
-        column.id = uuidv4()
-    }
 
-    // Find the column in the workspace object
-    const columnObject = _.find(props.workspace.columns, { id: column.id })
-    const columnIndex = _.indexOf(props.workspace.columns, columnObject);
+// const initColumn = async (columnId: string) => {
+//     column.value = await db.columns.findOne(columnId).exec()
+// }
 
-    // Update the column
-    if(columnIndex > -1) {
-        Object.entries(props.workspace.columns[columnIndex]).forEach(_column => {
-            const index = _.head(_column)
-            props.workspace.columns[columnIndex][index] = column[index]
-        })
-    } else {
-        props.workspace.columns.push(column);
-    }
+// Check if we have a column
+// if(!!props.columnId) {
+//     await initColumn(props.columnId)
+// }
 
-    emits('update', props.workspace)
+const updateColumnTitle = async () => {
+    await column.value.modify((data) => {
+        if(!column.value?._id) {
+            data._id = uuidv4()
+        }
+
+        if(!column.value?.workspace) {
+            data.workspace = activeWorkspace._id
+        }
+
+        data.title = escape(titleInput.value.value)
+
+        return data
+    })
+
+    hideTitleInput()
+}
+
+const updateColumn = async () => {
+    await column.value.modify((data) => {
+        if(!column.value?._id) {
+            data._id = uuidv4()
+        }
+
+        if(!column.value?.workspace) {
+            data.workspace = activeWorkspace._id
+        }
+
+        data.title = escape(column.value.title)
+
+        return data
+    })
+
+    // await initColumn(column.value._id)
 
     hideTitleInput()
 }
@@ -117,26 +161,33 @@ const showTitleInput = async () => {
 // Save the new title
 const hideTitleInput = () => {
     // Make sure there is an actual value in the input
-    if(!!column.title) {
+    if(!!column.value.title) {
         showInput.value = false
-        column.title = escape(column.title)
-    }
-
-    // Initialize column if needed
-    if(!column.id) {
-        column.id = uuidv4();
-        props.workspace.columns.push(column);
     }
 }
 
-const removeColumn = () => {
-    const columnObject = _.find(props.workspace.columns, { id: column.id })
-    const columnIndex = _.indexOf(props.workspace.columns, columnObject);
+const removeColumn = async () : Promise<void> => {
+    // Find our workspace so that we can remove the column reference
+    const _workspaces = await db.workspaces.find({
+        selector: {
+            columns: column.value._id
+        }
+    }).exec()
 
-    if(columnIndex > -1) {
-        props.workspace.columns.splice(columnIndex, 1)
-        emits('update', props.workspace)
-    }
+    // Remove the column reference
+    await _workspaces.forEach((_workspace) => {
+        _workspace.modify((data) => {
+            data.columns = data.columns.toSpliced(data.columns.findIndex((c) => c === column.value._id), 1)
+            return data
+        })
+    })
+
+    // Remove the column
+    const _column = await db.columns.findOne(column.value._id).exec()
+    _column.remove()
+
+    // Update our columns
+    // columns.value = await db.columns.find().sort({created: "asc"}).exec()
 }
 
 // Show the "Add A Link" modal
@@ -153,21 +204,27 @@ const closeAddLinkModal = () => {
 
 // Add a link from the selection of tabs
 const addTabLink = async (tab = {}) => {
-    const html = await fetch(tab.url).then(response => response.text())
-    const $ = cheerio.load(html);
-    const description = $('meta[name*="description"]').attr('content')
+    // Due to Chrome's ridiculous storage limitations we are omitting the
+    // description for now but plan to add it later once we figure out how
 
-    const link = {
-        id: uuidv4(),
-        title: tab.title,
+    // const html = await fetch(tab.url).then(response => response.text())
+    // const $ = cheerio.load(html);
+    // const description = $('meta[name*="description"]').attr('content')
+
+    const link : Link = {
+        _id: uuidv4(),
+        title: escape(tab.title),
         url: tab.url,
         favIconUrl: tab.favIconUrl,
-        description: !!description ? description : "No description",
-        createdOn: Date.now(),
+        description: "",
+        created: Date.now(),
     }
 
-    column.links.push(link);
-    emits('update', props.workspace)
+    await column.value.modify((data) => {
+        data.links = data.links.concat(link)
+        return data
+    })
+
     closeAddLinkModal();
 }
 
@@ -189,8 +246,11 @@ const addTextLink = async () => {
 
     // Parse our markup and assign variables
     textLink.title = $('title').text()
-    textLink.description = $('meta[name*="description"]').attr('content')
     textLink.favIconUrl = $('link[rel*="icon"]').attr('href')
+
+    // Due to Chrome's ridiculous storage limitations we are omitting the
+    // description for now but plan to add it later once we figure out how
+    // textLink.description = $('meta[name*="description"]').attr('content')
 
     // Check if we have a favicon in the root dir if none was specified in the markup
     if(typeof textLink.favIconUrl === "undefined") {
@@ -207,31 +267,44 @@ const addTextLink = async () => {
     }
 
     const link = {
-        id: uuidv4(),
-        title: textLink.title,
+        _id: uuidv4(),
+        title: escape(textLink.title),
         url: textLink.url.replace(/\/?$/, '/'), // Make sure we have a trailing slash to make the browser API happy later
         favIconUrl: textLink.favIconUrl,
-        description: !!textLink.description ? textLink.description : "No description",
+        description: "",
         createdOn: Date.now(),
     }
 
-    column.links.push(link);
-    emits('update', props.workspace)
+    await column.value.modify((data) => {
+        data.links = data.links.concat(link)
+        return data
+    })
+
     closeAddLinkModal()
 }
 
-const removeLink = (id: string) => {
-    const linkObject = _.find(column.links, { id: id })
-    const linkIndex = _.indexOf(column.links, linkObject);
+const removeLink = async (id: string) => {
+    const linkIndex = column.value.links.findIndex((link) => link._id === id);
 
     if(linkIndex > -1) {
-        column.links.splice(linkIndex, 1)
-        emits('update', props.workspace)
+        await column.value.modify((data) => {
+            // Clone our links array so that we can modify it
+            const links = Object.assign([], data.links)
+
+            // Remove the link
+            links.splice(linkIndex, 1)
+
+            // Replace our links array with the modified version
+            data.links = links
+
+            return data
+        })
     }
 }
 
 const openAllLinks = async () => {
-    if(!column.links.length) {
+    // TODO: Set up global alert box and handle message with global state
+    if(!column.value.links.length) {
         emits('alert', 'No links to open.')
         return false;
     }
@@ -242,7 +315,7 @@ const openAllLinks = async () => {
     // group is created and all the tabs have been added to it, we can
     // lastly add the column name as the tab name.
     let tabIds = []
-    await Promise.all(column.links.map(async link => {
+    await Promise.all(column.value.links.map(async link => {
         // Open our link
         const tab = await browser.tabs.create({
             url: link.url
@@ -256,33 +329,42 @@ const openAllLinks = async () => {
             // Create the group and add our tabs
             browser.tabs.group({tabIds}, (groupId) => {
                 // Add the title to the group
-                browser.tabGroups.update(groupId, {title: column.title})
+                browser.tabGroups.update(groupId, {title: column.value.title})
             })
         }
     })
 }
 
 const importOpenTabs = async () => {
+    // TODO: Set up global alert box and handle message with global state
     if(!browserTabs.value.length) {
         emits('alert', 'No tabs to import.')
         return false;
     }
 
-    await Promise.all(browserTabs.value.map(async tab => {
-        const html = await fetch(tab.url).then(response => response.text())
-        const $ = cheerio.load(html);
-        const description = $('meta[name*="description"]').attr('content')
+    const newLinks = []
 
-        column.links.push({
-            id: uuidv4(),
-            title: tab.title,
+    Promise.all(browserTabs.value.map(async tab => {
+        // Due to Chrome's ridiculous storage limitations we are omitting the
+        // description for now but plan to add it later once we figure out how
+
+        // const html = await fetch(tab.url).then(response => response.text())
+        // const $ = cheerio.load(html);
+        // const description = $('meta[name*="description"]').attr('content')
+
+        newLinks.push({
+            _id: uuidv4(),
+            title: escape(tab.title),
             url: tab.url,
             favIconUrl: tab.favIconUrl,
-            description: !!description ? description : "No description",
-            createdOn: Date.now(),
+            description: "",
+            created: Date.now(),
         })
-    })).then(() => {
-        emits('update', props.workspace)
+    })).then(async () => {
+        await column.value.modify((data) => {
+            data.links = data.links.concat(newLinks)
+            return data
+        })
     })
 
 
@@ -290,8 +372,9 @@ const importOpenTabs = async () => {
 </script>
 
 <template>
+
     <!-- Column -->
-    <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column.id">
+    <div class="w-[21.378rem] h-full p-10 rounded-box drop-shadow-md bg-neutral text-lg" :id="column._id">
         <!-- Column Title -->
         <div class="text-xl relative px-10 py-5">
             <div class="flex flex-row justify-between content-center" v-if="!showInput">
@@ -304,23 +387,23 @@ const importOpenTabs = async () => {
                       <EllipsisVerticalIcon class="w-12" />
                     </label>
                     <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-content">
-                      <li><a @click="showTitleInput" class="handle-focus"><PencilSquareIcon class="w-12" role="button" :aria-controls="`column-title-${column.id}`" /> Rename</a></li>
-                      <li><a @click="removeColumn()" role="button" :aria-controls="column.id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
+                      <li><a @click="showTitleInput" class="handle-focus"><PencilSquareIcon class="w-12" role="button" :aria-controls="`column-title-${column._id}`" /> Rename</a></li>
+                      <li><a @click="removeColumn" role="button" :aria-controls="column._id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
                     </ul>
                 </div>
             </div>
-            <form class="relative" v-if="!!showInput" @submit.prevent="updateColumn">
-              <label :for="`column-title-${column.id}`" class="sr-only">Collection title</label>
+            <form class="relative" v-if="!!showInput" @submit.prevent="updateColumnTitle">
+              <label :for="`column-title-${column._id}`" class="sr-only">Collection title</label>
               <input
                       ref="titleInput"
-                      :name="`column-title-${column.id}`"
-                      :id="`column-title-${column.id}`"
+                      :name="`column-title-${column._id}`"
+                      :id="`column-title-${column._id}`"
                       class="input input-md input-bordered input-info w-full"
                       placeholder="Collection Title"
-                      v-model="column.title"
+                      :value="column.title"
               />
               <button
-                      v-if="!!column.title"
+                      v-if="!!titleInput"
                       type="submit"
                       class="absolute right-0 btn btn-ghost opacity-25 hover:opacity-100 hover:z-[1]"
               >
@@ -329,7 +412,7 @@ const importOpenTabs = async () => {
           </form>
             <!-- Column Quick Actions -->
             <ul class="flex justify-start items-center gap-1" role="menu"  v-if="!showInput">
-                <li class="tooltip tooltip-bottom" data-tip="Open all links" v-if="!!column.links.length">
+                <li class="tooltip tooltip-bottom" data-tip="Open all links" v-if="!!column.links?.length">
                     <a class="btn btn-xs hover:btn-info" title="Open all links" role="menuitem" @click="openAllLinks">
                         <ArrowUpOnSquareStackIcon class="h-5 w-5" />
                     </a>
@@ -344,29 +427,36 @@ const importOpenTabs = async () => {
         </div>
         <!-- /Column Title -->
         <!-- Links Container -->
-        <div class="relative overflow-y-scroll" style="height: calc(100% - 111px)">
-            <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column.id">
-                <!-- Links -->
-                <WorkspaceColumnLink @remove="removeLink" v-for="link in column.links" :link="link"/>
-                <!-- /Links -->
-                <!-- Add Link Button -->
-                <a class="w-full mb-xxj btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
-                   title="Add a new link"
-                   role="button"
-                   @click="showAddLinkModal"
-                >
-                    <PlusIcon class="stroke-current stroke-0 w-32 mx-auto" />
-                    <span class="sr-only">Add new link</span>
-                </a>
-                <!-- /Add Link Button -->
+        <Suspense>
+            <div class="relative overflow-y-scroll" style="height: calc(100% - 111px)">
+                <div class="w-full grid grid-rows-auto gap-10 overflow-hidden absolute top-0 left-0" v-if="!!column._id">
+                    <!-- Links -->
+                    <WorkspaceColumnLink v-for="link in column.links" :key="link.created" :link="link" @remove="removeLink" />
+                    <!-- /Links -->
+                    <!-- Add Link Button -->
+                    <a class="w-full mb-xxj btn btn-neutral rounded-btn text-center btn-lg hover:bg-white hover:bg-opacity-10"
+                       title="Add a new link"
+                       role="button"
+                       @click="showAddLinkModal"
+                    >
+                        <PlusIcon class="stroke-current stroke-0 w-32 mx-auto" />
+                        <span class="sr-only">Add new link</span>
+                    </a>
+                    <!-- /Add Link Button -->
+                </div>
             </div>
-        </div>
+            <template #fallback>
+                <div class="w-full h-full flex justify-center">
+                    <span class="loading loading-bars loading-lg"></span>
+                </div>
+            </template>
+        </Suspense>
         <!-- /Links Container -->
     </div>
     <!-- /Column -->
 
     <!-- Add Link Modal -->
-    <dialog :id="`${column.id}_add_link`" class="modal" v-if="!!column.id" ref="addLinkModal">
+    <dialog :id="`${column._id}_add_link`" class="modal" v-if="!!column._id" ref="addLinkModal">
         <div class="modal-box">
             <h2 class="font-bold text-lg">Add a link</h2>
             <p class="py-4">Select one of your open tabs below</p>
@@ -413,6 +503,7 @@ const importOpenTabs = async () => {
         </div>
     </dialog>
     <!-- /Add Link Modal -->
+
 </template>
 
 <style scoped>

@@ -40,7 +40,7 @@ const openLinkInNewTab = () => {
 }
 
 const removeLink = () => {
-    emits('remove', props.link.id)
+    emits('remove', props.link._id)
 }
 
 const discardTabs = async () => {
@@ -93,7 +93,7 @@ onMounted(() => {
                 </label>
                 <ul tabindex="0" class="dropdown-content z-10 menu p-2 shadow bg-base-100 rounded-box w-48">
                     <li><a @click.stop="openLinkInNewTab"><ArrowTopRightOnSquareIcon class="w-12" /> Open in new tab</a></li>
-                    <li><a @click="removeLink" role="button" :aria-controls="props.link.id" title="Delete column"><TrashIcon class="w-12" /> Delete</a></li>
+                    <li><a @click="removeLink" role="button" :aria-controls="props.link._id" title="Delete link"><TrashIcon class="w-12" /> Delete</a></li>
                     <li  v-if="hasOpenTabs"><a @click="discardTabs" role="button" :aria-controls="props.link.id" title="Put tabs with this URL loaded to sleep"><PauseCircleIcon class="w-12" /> Sleep open tabs</a></li>
                 </ul>
             </div>

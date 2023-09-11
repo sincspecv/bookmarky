@@ -2,16 +2,20 @@
 import type { Workspace, Column, Link } from "~lib/interfaces"
 import type { App, Ref } from "vue"
 import { ref, computed } from "vue"
-import { useWorkspaceStorage } from "~lib/useWorkspaceStorage"
 import * as browser from "webextension-polyfill"
+import useWorkspacesStorage from "~database";
+import { useRxStore } from "~stores/useRxStore";
+
 import {ArrowTopRightOnSquareIcon, PauseCircleIcon, TrashIcon} from "@heroicons/vue/24/outline";
 import {EllipsisVerticalIcon} from "@heroicons/vue/24/solid";
 
-const storage = useWorkspaceStorage()
-const workspaces : Ref<Workspace[]> = computed(() => storage.getWorkspaces())
-const workspace : Workspace = await storage.getActiveWorkspace()
-const columns : Column[] = await storage.getActiveColumns();
-const activeColumn : Ref<Column> = ref(columns.find((i) => i !== undefined))
+const workspacesStore = useRxStore()
+const db = await useWorkspacesStorage()
+
+const workspaces : Ref<Workspace[]> = ref(await db.workspaces.find().sort({created: "asc"}).exec())
+const workspace : Ref<Workspace> = ref(await workspacesStore.getActiveWorkspace)
+const columns : Ref<Column[]> = ref(await db.columns.find({ selector: { workspace: workspace.value?._id } }).sort({created: "asc"}).exec())
+const activeColumn : Ref<Column> = ref(columns.value.find((i) => i !== undefined))
 
 const openLink = (link : Link) => {
     browser.tabs.create({

@@ -1,80 +1,80 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue"
-import { useRouter, useRoute } from "vue-router"
-import { v4 as uuidv4 } from "uuid"
-import { Storage } from "@plasmohq/storage"
-import * as _ from "lodash-es"
-import escape from "validator/es/lib/escape"
+    import { reactive, ref, onMounted, toRef } from "vue"
+    import { useRouter, useRoute } from "vue-router"
+    import { v4 as uuidv4 } from "uuid"
+    import escape from "validator/es/lib/escape"
+    import useWorkspacesStorage from "~database";
+    import { useRxStore } from "~stores/useRxStore";
 
-const router = useRouter()
-const route = useRoute()
+    const router = useRouter()
+    const route = useRoute()
 
-const workspaceData = new Storage()
-let workspaces = await workspaceData.get("workspaces");
-let workspace = reactive({ name: "", id: "", columns: [] })
+    const workspacesStore = useRxStore()
+    const db = await useWorkspacesStorage()
 
-// Make sure we have a workspaces array to work with
-if (!workspaces) {
-    await workspaceData.set("workspaces", []);
-}
+    // Load activeWorkspace on first load
+    const activeWorkspace = await workspacesStore.getActiveWorkspace
 
-// Check if our workspace exists
-const workspaceObject = _.find(workspaces, {id: workspace.id})
-
-// We have it. Let's set up our reactive variables
-if(!!workspaceObject) {
-    router.push({name: "workspace", params: {id: workspaceObject.id}, replace: true})
-}
-
-// Check for an already active workspace
-const activeWorkspace = await workspaceData.get("activeWorkspace");
-if(!!activeWorkspace) {
-    router.replace({name: "workspace", params: {id: activeWorkspace.id}})
-}
-
-// Set our focus on the input on initial load
-const workspaceNameInput = ref(null);
-onMounted(() => {
-    workspaceNameInput.value.focus();
-})
-
-const addWorkspace = async () => {
-    // Make sure we have a workspace name
-    if(!workspace.name) {
-        return false;
+    if(workspacesStore.firstLoad && !!activeWorkspace?._id) {
+        workspacesStore.setFirstLoad(false)
+        router.push({ name: "workspace", params: { id: activeWorkspace._id } })
     }
 
-    // Sanitize our workspace name
-    workspace.name = escape(workspace.name)
+    let workspace = { _id: "", name: "", columns: [], created: 0 }
+    const workspaceName = toRef(workspace.name)
 
-    // Make sure we have a workspace id
-    if(!workspace.id) {
-        workspace.id = uuidv4()
+    // Set our focus on the input on initial load
+    const workspaceNameInput = ref(null);
+
+    onMounted(() => {
+        workspaceNameInput.value.focus();
+    })
+
+    const addWorkspace = async () : Promise<void> => {
+        // Make sure we have a workspace name
+        // TODO: Implement better error handling
+        if(!workspace.name) {
+            return;
+        }
+
+        // Escape our workspace name
+        workspace.name = escape(workspace.name)
+
+        // Make sure we have a workspace id
+        if(!workspace._id) {
+            workspace._id = uuidv4()
+        }
+
+        // Make sure we have a created date
+        if(!workspace.created) {
+            workspace.created = Date.now()
+        }
+
+        // Save our workspace
+        try {
+            await db.workspaces.bulkUpsert([workspace])
+        } catch (e) {
+            console.error(`${e.name} while adding workspace`)
+            console.error(e.message)
+            return;
+        }
+
+        // Set as active workspace
+        await workspacesStore.setActiveWorkspace(workspace._id)
+        await router.push({ name: "workspace", params: {id: workspace._id}, replace: true })
     }
-
-    // Update our workspace in storage
-    workspaces.push(workspace)
-
-    workspaceData.set(`workspaces`, workspaces)
-        .then(() => {
-            // Set as active workspace
-            workspaceData.set(`activeWorkspace`, workspace)
-            router.push({name: "workspace", params: {id: workspace.id}, replace: true})
-        })
-}
-
 </script>
 
 <template>
     <div>
         <h1 class="text-3xl my-10 font-medium">Add a New Workspace</h1>
-        <div v-if="!workspace.id" class="rounded-box drop-shadow-md bg-neutral p-20">
-            <form @submit.prevent="addWorkspace" class="flex flex-col w-full gap-10" x-data="FormHandler">
+        <div v-if="!workspace._id" class="rounded-box drop-shadow-md bg-neutral p-20">
+            <form @submit.prevent="addWorkspace" class="flex flex-col w-full gap-10">
                 <label for="workspaceName" class="text-base">
                     Enter a unique name for your workspace
                 </label>
                 <input type="text" id="workspaceName" name="workspaceName" ref="workspaceNameInput" placeholder="Workspace Name" class="input input-lg input-bordered w-full" v-model="workspace.name" />
-                <button type="submit" class="btn enabled:btn-primary disabled:btn-active" :disabled="!workspace.name">Add Workspace</button>
+                <button type="submit" class="btn enabled:btn-primary disabled:btn-active">Add Workspace</button>
             </form>
         </div>
     </div>

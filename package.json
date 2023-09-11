@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
-    "package": "plasmo package"
+    "debug": "plasmo dev --verbose",
+    "package": "plasmo package",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org the-fancy-robot-llc --project javascript-vue ./build && sentry-cli sourcemaps upload --org the-fancy-robot-llc --project javascript-vue ./build"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.36",
@@ -17,9 +19,13 @@
     "@fortawesome/vue-fontawesome": "^3.0.3",
     "@heroicons/vue": "^2.0.18",
     "@plasmohq/storage": "^1.7.0",
+    "@sentry/vue": "^7.66.0",
     "cheerio": "1.0.0-rc.12",
     "pinia": "^2.1.4",
-    "plasmo": "0.81.0",
+    "pinia-plugin-persistedstate": "^3.2.0",
+    "plasmo": "0.82.1",
+    "rxdb": "^14.16.0",
+    "rxjs": "^7.8.1",
     "tailwindcss": "^3.3.3",
     "uuid": "^9.0.0",
     "validator": "^13.9.0",
@@ -38,7 +44,6 @@
     "autoprefixer": "^10.4.14",
     "daisyui": "latest",
     "import": "^0.0.6",
-    "lodash-es": "^4.17.21",
     "nested": "0.0.1-pre2",
     "postcss": "^8.4.26",
     "postcss-import": "^15.1.0",
