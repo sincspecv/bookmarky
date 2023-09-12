@@ -81,7 +81,7 @@ onMounted(() => {
                 </figure>
             </div>
             <div class="flex flex-col text-left overflow-hidden"  @click.prevent="openLink">
-                <h3 class="normal-case text-bold text-sm truncate text-ellipses">{{props.link.title}}</h3>
+                <h3 class="normal-case text-bold text-sm truncate text-ellipses" v-html="props.link.title"></h3>
                 <span class="normal-case text-xs overflow-hidden truncate text-ellipses">{{props.link.url}}</span>
             </div>
             <div class="dropdown dropdown-bottom dropdown-end h-auto ml-auto mr-0 self-center">

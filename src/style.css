@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --carousel-indicator-width: 0;
+  --carousel-indicator-position: 0;
+}
+
 @layer base {
   html {
     box-sizing: border-box;
@@ -61,12 +66,22 @@
   .app-container {
     @apply p-10 relative;
   }
+
+  .carousel-indicator {
+    @apply w-full h-2 rounded-box bg-neutral relative;
+    transform-style: preserve-3d;
+  }
+
+  .carousel-indicator::after {
+    @apply content-[""] block absolute h-full bg-primary rounded-box;
+    width: var(--carousel-indicator-width);
+    left: var(--carousel-indicator-position);
+  }
 }
 
 #__plasmo {
   height: 100vh;
   max-height: 100vh;
-  /*overflow: hidden;*/
 }
 
 #main {

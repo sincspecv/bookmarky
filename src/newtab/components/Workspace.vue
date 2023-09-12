@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import * as browser from "webextension-polyfill"
-    import { watch, ref, onMounted, nextTick, Ref } from "vue"
+    import {watch, ref, onMounted, nextTick, computed, Ref, onUpdated} from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import { v4 as uuidv4 } from "uuid"
@@ -69,9 +69,59 @@
     const alertModalMessage = ref("")
     const columnsContainer = ref(null)
 
-    // For the columns carousel functionality
-    let scrollIndex = 0
+    const carouselIndicatorElement = ref(null)
 
+    // For the columns carousel functionality
+    const disableScrollButtons = ref(false)
+
+    const updateDisableScrollButtons = (): void => {
+        if(!columnsContainer.value) {
+            return;
+        }
+
+        disableScrollButtons.value = columnsContainer.value.clientWidth < window.innerWidth
+    }
+
+    const calculateCarouselIndicatorWidth = (): void => {
+        if(!columnsContainer.value) {
+            return;
+        }
+
+        const gutter: number = 36
+        const root = document.documentElement
+        const indicatorWidth: number = ((window.innerWidth - ((gutter * columns.value.length) + (gutter * 2))) / (columnsContainer.value.clientWidth + gutter)) * 100
+        const width: number = indicatorWidth <= 100 ? indicatorWidth : 100
+
+        root.style.setProperty('--carousel-indicator-width', `${width}%`)
+    }
+
+    const changeCarouselIndicatorPosition = (event) => {
+        if(!columnsContainer.value) {
+            return;
+        }
+
+        const scrollAmount: number = columnsContainer.value.parentElement.scrollLeft
+        const indicatorPosition: number = (scrollAmount / window.innerWidth) * 100
+        const position: number = indicatorPosition > 0 ? indicatorPosition : 0
+
+        document.documentElement.style.setProperty('--carousel-indicator-position', `${position}%`)
+    }
+
+    const setCarouselButtons = () => {
+        updateDisableScrollButtons()
+        // calculateCarouselIndicatorWidth()
+    }
+
+    watch(columns, async () => {
+        setCarouselButtons()
+    }, { flush: 'post' })
+
+    // Run when columnsContainer ref has a value
+    watch(columnsContainer, (element) => {
+        if(!!element) {
+            setCarouselButtons()
+        }
+    })
 
     // Make our dropdowns go away after clicking a menu item
     onMounted(() => {
@@ -89,6 +139,10 @@
 
         // Make sure firstLoad is set to false
         workspacesStore.setFirstLoad(false)
+
+        window.addEventListener('resize', async () => {
+            setCarouselButtons()
+        })
     })
 
     /**
@@ -381,6 +435,12 @@
         })
     }
 
+    const handleVerticalScroll = (event) => {
+        if(event.deltaY) {
+            event.preventDefault()
+            columnsContainer.value.parentElement.scrollBy(event.deltaY, 0)
+        }
+    }
 </script>
 
 <template>
@@ -437,50 +497,66 @@
                 </button>
             </form>
         </div>
-            <div v-if="!!workspace._id" class="flex flex-1 flex-row flex-nowrap overflow-y-auto relative" id="columns-container">
-                <div class="py-10 h-full sticky z-[1] top-0 left-0 dark:bg-gray-800">
+        <Transition name="fade">
+            <div class="w-full h-33 flex flex-row flex-nowrap justify-between items-center gap-10" v-show="!disableScrollButtons">
+                <!-- Scroll left button -->
+                <div class="w-auto h-full sticky z-[1] top-0 left-0 dark:bg-gray-800">
                     <button
                         @click="scrollColumns('right')"
-                        class="h-full w-content p-4 mr-10 rounded-box drop-shadow-md bg-neutral hover:bg-primary hover:opacity-100"
+                        :disabled="disableScrollButtons"
+                        aria-controls="columns-container"
+                        class="h-full w-content p-1 rounded-md drop-shadow-md bg-neutral hover:bg-primary disabled:opacity-25 disabled:hover:bg-neutral"
                     >
-                        <ArrowLeftIcon class="stroke-current block mx-auto w-24" />
+                        <ArrowLeftIcon class="stroke-current block mx-auto w-10" />
                     </button>
                 </div>
-                <Suspense>
-                    <ul :key="columns.length" ref="columnsContainer" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10 list-none m-0" id="columns-container">
-                        <li v-for="(column, index) in columns" :key="column._id" :data-index="index" class="column-item">
-                            <WorkspaceColumn @alert="showAlert" :columnId="column._id" />
-                        </li>
-                        <li  v-if="!columns.length" class="column-item">
-                            <WorkspaceColumn />
-                        </li>
-                        <li :data-index="columns.length" class="column-item" id="add-column-item">
-                            <!-- Add Column -->
-                            <button
-                                @click="addColumn"
-                                class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
-                            >
-                                <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
-                                <span class="sr-only">Add new column</span>
-                            </button>
-                            <!-- /Add Column -->
-                        </li>
-                    </ul>
-                    <template #fallback>
-                        <div class="w-full h-full flex justify-center">
-                            <span class="loading loading-bars loading-lg"></span>
-                        </div>
-                    </template>
-                </Suspense>
-                <div class="py-10 h-full sticky z-[1] top-0 right-0 dark:bg-gray-800">
+                <!-- /Scroll left button -->
+                <!-- Scroll Indicator -->
+<!--                <div class="carousel-indicator" aria-hidden="true" ref="carouselIndicatorElement"></div>-->
+                <!-- /Scroll Indicator -->
+                <!-- Scroll left button -->
+                <div class="w-auto h-full sticky z-[1] top-0 right-0 dark:bg-gray-800">
                     <button
                         @click="scrollColumns('left')"
-                        class="h-full w-content p-6 ml-10 rounded-box drop-shadow-md bg-neutral hover:bg-primary"
+                        :disabled="disableScrollButtons"
+                        aria-controls="columns-container"
+                        class="h-full w-content p-1 rounded-md drop-shadow-md bg-neutral hover:bg-primary disabled:opacity-25 disabled:hover:bg-neutral"
                     >
-                        <ArrowRightIcon class="stroke-current block mx-auto w-24" />
+                        <ArrowRightIcon class="stroke-current block mx-auto w-10" />
                     </button>
                 </div>
+                <!-- /Scroll left button -->
             </div>
+        </Transition>
+        <div v-if="!!workspace._id" class="flex flex-1 flex-row flex-nowrap overflow-y-auto relative w-full"  @wheel="handleVerticalScroll" @scroll="changeCarouselIndicatorPosition">
+
+            <Suspense>
+                <ul :key="columns.length" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10 list-none m-0" id="columns-container" ref="columnsContainer"  >
+                    <li v-for="(column, index) in columns" :key="column._id" :data-index="index" class="column-item">
+                        <WorkspaceColumn @alert="showAlert" :columnId="column._id" />
+                    </li>
+                    <li  v-if="!columns.length" class="column-item">
+                        <WorkspaceColumn />
+                    </li>
+                    <li :data-index="columns.length" class="column-item" id="add-column-item">
+                        <!-- Add Column -->
+                        <button
+                            @click="addColumn"
+                            class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
+                        >
+                            <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
+                            <span class="sr-only">Add new column</span>
+                        </button>
+                        <!-- /Add Column -->
+                    </li>
+                </ul>
+                <template #fallback>
+                    <div class="w-full h-full flex justify-center">
+                        <span class="loading loading-bars loading-lg"></span>
+                    </div>
+                </template>
+            </Suspense>
+        </div>
 
         <!-- Delete Workspace Modal -->
         <dialog :id="`${workspace._id}_delete_prompt`" class="modal" v-if="!!workspace._id" ref="deleteWorkspaceModal">
@@ -521,5 +597,13 @@
 </template>
 
 <style scoped>
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.5s ease;
+}
 
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
 </style>
