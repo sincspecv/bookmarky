@@ -8,6 +8,18 @@ dependencies:
   '@editorjs/editorjs':
     specifier: ^2.28.0
     version: 2.28.0
+  '@editorjs/header':
+    specifier: ^2.7.0
+    version: 2.7.0
+  '@editorjs/list':
+    specifier: ^1.8.0
+    version: 1.8.0
+  '@editorjs/nested-list':
+    specifier: ^1.3.0
+    version: 1.3.0
+  '@editorjs/paragraph':
+    specifier: ^2.10.0
+    version: 2.10.0
   '@fortawesome/fontawesome-svg-core':
     specifier: ^1.2.36
     version: 1.2.36
@@ -35,6 +47,9 @@ dependencies:
   cheerio:
     specifier: 1.0.0-rc.12
     version: 1.0.0-rc.12
+  editorjs-text-alignment-blocktune:
+    specifier: ^1.0.3
+    version: 1.0.3
   pinia:
     specifier: ^2.1.4
     version: 2.1.4(typescript@5.1.6)(vue@3.3.4)
@@ -96,7 +111,7 @@ devDependencies:
     version: 10.4.14(postcss@8.4.26)
   daisyui:
     specifier: latest
-    version: 3.7.3
+    version: 3.7.4
   import:
     specifier: ^0.0.6
     version: 0.0.6
@@ -327,8 +342,44 @@ packages:
       '@babel/helper-validator-identifier': 7.22.5
       to-fast-properties: 2.0.0
 
+  /@codexteam/icons@0.0.2:
+    resolution: {integrity: sha512-KdeKj3TwaTHqM3IXd5YjeJP39PBUZTb+dtHjGlf5+b0VgsxYD4qzsZkb11lzopZbAuDsHaZJmAYQ8LFligIT6Q==}
+    dev: false
+
+  /@codexteam/icons@0.0.4:
+    resolution: {integrity: sha512-V8N/TY2TGyas4wLrPIFq7bcow68b3gu8DfDt1+rrHPtXxcexadKauRJL6eQgfG7Z0LCrN4boLRawR4S9gjIh/Q==}
+    dev: false
+
+  /@codexteam/icons@0.0.5:
+    resolution: {integrity: sha512-s6H2KXhLz2rgbMZSkRm8dsMJvyUNZsEjxobBEg9ztdrb1B2H3pEzY6iTwI4XUPJWJ3c3qRKwV4TrO3J5jUdoQA==}
+    dev: false
+
   /@editorjs/editorjs@2.28.0:
     resolution: {integrity: sha512-v0KxSoX4MSZR5HyEbCo0vBri+qdThasABH9u1O1wC3ZxNMO7FiPJ580rp6uTPeFSDSQBmOL3VmRm7ZMfI3iKAg==}
+    dev: false
+
+  /@editorjs/header@2.7.0:
+    resolution: {integrity: sha512-4fGKGe2ZYblVqR/P/iw5ieG00uXInFgNMftBMqJRYcB2hUPD30kuu7Sn6eJDcLXoKUMOeqi8Z2AlUxYAmvw7zQ==}
+    dependencies:
+      '@codexteam/icons': 0.0.5
+    dev: false
+
+  /@editorjs/list@1.8.0:
+    resolution: {integrity: sha512-Vq6cjyTXBzgegYv/MtTfuDdiz59yGhDEc/yAVXr6lmvoWAFs9cJ4TLuh4/9SbrbhIptcQLDvUjMDKmRrV6v2NQ==}
+    dependencies:
+      '@codexteam/icons': 0.0.4
+    dev: false
+
+  /@editorjs/nested-list@1.3.0:
+    resolution: {integrity: sha512-diRsa64YjR4Xnf5jbSxnRn9kfFc0ZOQBqp0dx3ZwHkm5wxN9D46KI7qXdIyOoUNzAFyK+/Q5c29PcoBJLOp01w==}
+    dependencies:
+      '@codexteam/icons': 0.0.2
+    dev: false
+
+  /@editorjs/paragraph@2.10.0:
+    resolution: {integrity: sha512-AzaGxR9DQAdWhx43yupBcwqtwH0WWi5jBDOCSeALIK86IYOnO6Lp4anEbH8IYmYrE/5MdnRiTwdU8/Xs8W15Nw==}
+    dependencies:
+      '@codexteam/icons': 0.0.4
     dev: false
 
   /@esbuild/android-arm64@0.18.15:
@@ -4032,8 +4083,8 @@ packages:
       '@babel/runtime': 7.9.6
     dev: false
 
-  /daisyui@3.7.3:
-    resolution: {integrity: sha512-gKlz3RwfaukZxf8nQZsDAZ7quUSi7F8HjGGB34tkHruvfQB9cgVDQsmqUqSQtkAJYvzbrg/3dLUa9+5jF4iC1A==}
+  /daisyui@3.7.4:
+    resolution: {integrity: sha512-hAgTomIK8RDQ/RLH9Z2NxZiNVAO40w08FlhgYS/8CTFF+wggeHeNJ0qNBHWAJJzhjD8UU2u4PZ4nc4r9rwfTLw==}
     engines: {node: '>=16.9.0'}
     dependencies:
       colord: 2.9.3
@@ -4227,6 +4278,10 @@ packages:
   /dotenv@7.0.0:
     resolution: {integrity: sha512-M3NhsLbV1i6HuGzBUH8vXrtxOk+tWmzWKDMbAVSUp3Zsjm7ywFeuwrUXhmhQyRK1q5B5GGy7hcXPbj3bnfZg2g==}
     engines: {node: '>=6'}
+    dev: false
+
+  /editorjs-text-alignment-blocktune@1.0.3:
+    resolution: {integrity: sha512-DAJ2LJP+WjETvU4lVOJCqZ1kZkKHp0GkujkqZgza9DRv7bO46m1M/s2d5Ba5hPFdmqk1vA/ci++MQXgWD7mWYw==}
     dev: false
 
   /electron-to-chromium@1.4.466:
