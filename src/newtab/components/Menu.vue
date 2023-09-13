@@ -16,12 +16,23 @@
 
   const { activeWorkspace } = storeToRefs(workspacesStore)
   const workspaces = ref(await db.workspaces.find().sort({created: "asc"}).exec())
-  const updateKey = ref(Date.now());
+  const updateKey = ref(Date.now())
+
+  const menuContainer = ref(null)
 
   await db.workspaces.$.subscribe(async (event) => {
       workspaces.value = await db.workspaces.find().sort({created: "asc"}).exec()
       updateKey.value = Date.now()
   })
+
+
+
+  const handleVerticalScroll = (event) => {
+      if(event.deltaY) {
+          event.preventDefault()
+          menuContainer.value.scrollBy(event.deltaY, 0)
+      }
+  }
 
   // Watch for changes and update the menu if necessary
   watch(() => route.params.id, async (toParams, prevParams) => {
@@ -49,7 +60,7 @@
 
 <template>
   <div class="mx-auto w-full min-w-0">
-      <div class="join gap-[4px] my-10 w-full carousel relative" role="menu" :key="workspaces.length">
+      <div class="join gap-[4px] my-10 w-full overflow-x-scroll relative" role="menu" ref="menuContainer" :key="workspaces.length" @wheel="handleVerticalScroll">
           <router-link v-for="workspace in workspaces" :key="workspace._id" :to="`/workspace/${workspace._id}`" class="join-item btn rounded-btn carousel-item" role="menuitem" v-html="workspace.name"></router-link>
           <router-link to="/" class="join-item btn btn-neutral rounded-btn w-[60.78px] ml-px sticky right-0 top-1/2 -translate-y-[1.5px]"><PlusIcon class="stroke-current stroke-1 w-16" /><span class="sr-only">Add new workspace</span></router-link>
       </div>
