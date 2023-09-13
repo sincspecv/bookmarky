@@ -8,6 +8,7 @@ import { KEY_DATABASE } from '~lib/keys'
 // Import Schemas
 import workspaceSchema from '~schemas/workspace.schema'
 import columnSchema from '~schemas/column.schema'
+import noteSchema from '~schemas/note.schema'
 
 // Add leader election and cleanup plugin
 addRxPlugin(RxDBLeaderElectionPlugin);
@@ -46,6 +47,9 @@ export default async function useWorkspacesStorage() {
         },
         columns: {
             schema: columnSchema
+        },
+        notes: {
+            schema: noteSchema
         }
     })
 

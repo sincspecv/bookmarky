@@ -5,6 +5,7 @@
   import {storeToRefs} from "pinia";
   import { useRxStore } from "~stores/useRxStore";
   import useWorkspacesStorage from "~database";
+  import { cloneDeep } from "lodash-es"
 
   // Editor.js
   import EditorJS from '@editorjs/editorjs';
@@ -17,6 +18,9 @@
 
   // Icons
   import { PlusIcon } from '@heroicons/vue/24/solid'
+  import {Ref} from "vue/dist/vue";
+  import {Column} from "~lib/App";
+  import {RxColumnDocument} from "~lib/RxDB";
 
   // Collect our props from the parent component
   const props = defineProps(['isInView', 'workspaceId'])
@@ -30,6 +34,24 @@
   const workspaces = ref(await db.workspaces.find().sort({created: "asc"}).exec())
   const isInView = toRef(props, 'isInView')
   const editor = ref(null)
+
+  const note : Ref<RxColumnDocument[]> = ref(await db.notes.findOne({ selector: { workspace: props.workspaceId } }).exec())
+
+  if(!note.value) {
+      await db.notes.insert({
+          _id: uuidv4(),
+          workspace: props.workspaceId,
+          noteData: {},
+          created: Date.now()
+      })
+
+      note.value = await db.notes.findOne({ selector: { workspace: props.workspaceId } }).exec()
+  }
+
+  // Update our ref so that RxDB doesn't complain when saving
+  note.value.$.subscribe(doc => {
+      note.value = doc
+  })
 
   onMounted(() => {
       editor.value = new EditorJS({
@@ -75,12 +97,21 @@
                   },
               }
           },
+
+          data: note.value.noteData,
+
+          onChange: (api, event) => {
+              api.saver.save()
+              .then((noteData) => {
+                  note.value.incrementalPatch({
+                      noteData: cloneDeep(noteData)
+                  })
+              })
+          }
       });
 
       editor.value.isReady
           .then(() => {
-              console.log(editor.value)
-
               // Focus on the editor when it is in view
               watch(isInView, (isInView) => {
                   if(isInView) {
@@ -96,7 +127,7 @@
 </script>
 
 <template>
-  <div class="w-full h-full px-10 py-24 rounded-lg drop-shadow-md bg-white text-black text-lg">
+  <div class="w-full h-full px-10 py-24 rounded-lg drop-shadow-md bg-white text-black text-md">
       <div :id="`${props.workspaceId}-workspace-editor`"></div>
   </div>
 </template>

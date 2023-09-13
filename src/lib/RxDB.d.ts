@@ -27,16 +27,25 @@ export interface RxColumnDocumentType {
     }>;
     created: number;
 }
+export interface RxNoteDocumentType {
+    _id: string;
+    workspace: string;
+    noteData: object;
+    created: number;
+}
 
 export type RxWorkspaceDocument = RxDocument<RxWorkspaceDocumentType>;
 export type RxColumnDocument = RxDocument<RxColumnDocumentType>;
+export type RxNoteDocument = RxDocument<RxNoteDocumentType>;
 
 export type RxWorkspaceCollection = RxCollection<RxWorkspaceDocumentType, {}>;
 export type RxColumnCollection = RxCollection<RxColumnDocumentType, {}>;
+export type RxNoteCollection = RxCollection<RxNoteDocumentType, {}>;
 
 export interface RxBookmarkyCollections {
     workspaces: RxWorkspaceCollection,
-    columns: RxColumnCollection
+    columns: RxColumnCollection,
+    notes: RxNoteCollection
 }
 
 export type RxBookmarkyDatabase = RxDatabase<RxBookmarkyCollections>;
