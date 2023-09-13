@@ -12,6 +12,7 @@
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org the-fancy-robot-llc --project javascript-vue ./build && sentry-cli sourcemaps upload --org the-fancy-robot-llc --project javascript-vue ./build"
   },
   "dependencies": {
+    "@editorjs/checklist": "^1.5.0",
     "@editorjs/editorjs": "^2.28.0",
     "@editorjs/header": "^2.7.0",
     "@editorjs/list": "^1.8.0",

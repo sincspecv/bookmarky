@@ -579,7 +579,7 @@
         </div>
 
         <Transition name="rise">
-            <WorkspaceNotes v-show="showWorkspaceNotes" :workspaceId="workspace._id" />
+            <WorkspaceNotes v-show="showWorkspaceNotes" :isInView="showWorkspaceNotes" :workspaceId="workspace._id" />
         </Transition>
 
         <!-- Delete Workspace Modal -->

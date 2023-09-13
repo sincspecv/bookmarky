@@ -57,6 +57,13 @@
     @apply text-xs;
   }
 
+  /**
+   * Editor.js styles
+   */
+  .codex-editor svg {
+    @apply dark:fill-white !important;
+  }
+
   @media all and (min-width: 1024px) {
     html {
       font-size: 18px;

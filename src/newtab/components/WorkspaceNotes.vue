@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { watch, ref, onMounted, nextTick } from 'vue'
+  import { watch, ref, onMounted, toRef } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { v4 as uuidv4 } from "uuid"
   import {storeToRefs} from "pinia";
@@ -13,12 +13,13 @@
   import NestedList from '@editorjs/nested-list';
   import AlignmentTuneTool from 'editorjs-text-alignment-blocktune'
   import Paragraph from '@editorjs/paragraph';
+  import Checklist from '@editorjs/checklist';
 
   // Icons
   import { PlusIcon } from '@heroicons/vue/24/solid'
 
   // Collect our props from the parent component
-  const props = defineProps(['workspaceId'])
+  const props = defineProps(['isInView', 'workspaceId'])
 
   const router = useRouter()
   const route = useRoute()
@@ -27,6 +28,7 @@
 
   const { activeWorkspace } = storeToRefs(workspacesStore)
   const workspaces = ref(await db.workspaces.find().sort({created: "asc"}).exec())
+  const isInView = toRef(props, 'isInView')
   const editor = ref(null)
 
   onMounted(() => {
@@ -44,6 +46,11 @@
                   inlineToolbar: true,
                   tunes: ['anyTuneName'],
               },
+              paragraph: {
+                  class: Paragraph,
+                  inlineToolbar: true,
+                  tunes: ['anyTuneName'],
+              },
               list: {
                   class: NestedList,
                   inlineToolbar: true,
@@ -52,8 +59,8 @@
                       defaultStyle: 'unordered'
                   },
               },
-              paragraph: {
-                  class: Paragraph,
+              checklist: {
+                  class: Checklist,
                   inlineToolbar: true,
                   tunes: ['anyTuneName'],
               },
@@ -72,16 +79,24 @@
 
       editor.value.isReady
           .then(() => {
-              console.log('Editor.js is ready to work!')
+              console.log(editor.value)
+
+              // Focus on the editor when it is in view
+              watch(isInView, (isInView) => {
+                  if(isInView) {
+                      editor.value.focus()
+                  }
+              })
           })
           .catch((reason) => {
               console.log(`Editor.js initialization failed because of ${reason}`)
           });
   })
+
 </script>
 
 <template>
-  <div class="w-full h-full p-10 rounded-lg drop-shadow-md bg-neutral text-lg">
+  <div class="w-full h-full px-10 py-24 rounded-lg drop-shadow-md bg-white text-black text-lg">
       <div :id="`${props.workspaceId}-workspace-editor`"></div>
   </div>
 </template>
