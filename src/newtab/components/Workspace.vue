@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import * as browser from "webextension-polyfill"
-    import { watch, ref, onMounted, nextTick, Ref } from "vue"
+    import {watch, ref, onMounted, nextTick, computed, Ref, onUpdated} from "vue"
     import { useRouter, useRoute } from "vue-router"
     import WorkspaceColumn from "./WorkspaceColumn"
     import { v4 as uuidv4 } from "uuid"
@@ -22,6 +22,8 @@
     import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
     import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
     import { BookmarkSquareIcon } from '@heroicons/vue/24/outline'
+    import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+    import { ArrowRightIcon } from '@heroicons/vue/24/outline'
 
     // Configure our URL sanitation
     const isURLOptions = {
@@ -65,7 +67,61 @@
     const deleteWorkspaceModal = ref(null);
     const alertModal = ref(null)
     const alertModalMessage = ref("")
+    const columnsContainer = ref(null)
 
+    const carouselIndicatorElement = ref(null)
+
+    // For the columns carousel functionality
+    const disableScrollButtons = ref(false)
+
+    const updateDisableScrollButtons = (): void => {
+        if(!columnsContainer.value) {
+            return;
+        }
+
+        disableScrollButtons.value = columnsContainer.value.clientWidth < window.innerWidth
+    }
+
+    const calculateCarouselIndicatorWidth = (): void => {
+        if(!columnsContainer.value) {
+            return;
+        }
+
+        const gutter: number = 36
+        const root = document.documentElement
+        const indicatorWidth: number = ((window.innerWidth - ((gutter * columns.value.length) + (gutter * 2))) / (columnsContainer.value.clientWidth + gutter)) * 100
+        const width: number = indicatorWidth <= 100 ? indicatorWidth : 100
+
+        root.style.setProperty('--carousel-indicator-width', `${width}%`)
+    }
+
+    const changeCarouselIndicatorPosition = (event) => {
+        if(!columnsContainer.value) {
+            return;
+        }
+
+        const scrollAmount: number = columnsContainer.value.parentElement.scrollLeft
+        const indicatorPosition: number = (scrollAmount / window.innerWidth) * 100
+        const position: number = indicatorPosition > 0 ? indicatorPosition : 0
+
+        document.documentElement.style.setProperty('--carousel-indicator-position', `${position}%`)
+    }
+
+    const setCarouselButtons = () => {
+        updateDisableScrollButtons()
+        // calculateCarouselIndicatorWidth()
+    }
+
+    watch(columns, async () => {
+        setCarouselButtons()
+    }, { flush: 'post' })
+
+    // Run when columnsContainer ref has a value
+    watch(columnsContainer, (element) => {
+        if(!!element) {
+            setCarouselButtons()
+        }
+    })
 
     // Make our dropdowns go away after clicking a menu item
     onMounted(() => {
@@ -83,6 +139,10 @@
 
         // Make sure firstLoad is set to false
         workspacesStore.setFirstLoad(false)
+
+        window.addEventListener('resize', async () => {
+            setCarouselButtons()
+        })
     })
 
     /**
@@ -341,6 +401,46 @@
         }
     })
 
+    const scrollColumns = (direction: string) => {
+        if(!columnsContainer.value) {
+            return;
+        }
+
+        const columnItems = columnsContainer.value.querySelectorAll('.column-item')
+
+        // Get the column closest to the left edge
+        const nodeList = Array.from(columnItems)
+        const closest = nodeList.reduce((prev, curr) => {
+            return Math.abs(curr.getBoundingClientRect().x - 18) < Math.abs(prev.getBoundingClientRect().x - 18) ? curr : prev
+        })
+
+        // Determine what the next column is
+        let dataIndex: string|number = closest.dataset.index
+
+        if(direction === 'right') {
+            dataIndex = closest.dataset.index > 0 ? parseInt(closest.dataset.index) - 1 : closest.dataset.index
+        }
+
+        if(direction === 'left') {
+            dataIndex = closest.dataset.index < columns.value.length ? parseInt(closest.dataset.index) + 1 : closest.dataset.index
+        }
+
+        const nextColumn = columnsContainer.value.querySelector(`[data-index='${dataIndex}']`)
+
+        // Scroll to the next column
+        columnsContainer.value.parentNode.scrollTo({
+            top: 0,
+            left: nextColumn.offsetLeft,
+            behavior:'smooth'
+        })
+    }
+
+    const handleVerticalScroll = (event) => {
+        if(event.deltaY) {
+            event.preventDefault()
+            columnsContainer.value.parentElement.scrollBy(event.deltaY, 0)
+        }
+    }
 </script>
 
 <template>
@@ -397,34 +497,66 @@
                 </button>
             </form>
         </div>
-            <div v-if="!!workspace._id" class="flex-1 overflow-y-auto">
-                <Suspense>
-                    <ul :key="columns?.length" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10 list-none m-0">
-                        <li v-for="column in columns" :key="column._id">
-                            <WorkspaceColumn @alert="showAlert" :columnId="column._id" />
-                        </li>
-                        <li  v-if="!columns.length">
-                            <WorkspaceColumn />
-                        </li>
-                        <li>
-                            <!-- Add Column -->
-                            <button
-                                @click="addColumn"
-                                class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
-                            >
-                                <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
-                                <span class="sr-only">Add new column</span>
-                            </button>
-                            <!-- /Add Column -->
-                        </li>
-                    </ul>
-                    <template #fallback>
-                        <div class="w-full h-full flex justify-center">
-                            <span class="loading loading-bars loading-lg"></span>
-                        </div>
-                    </template>
-                </Suspense>
+        <Transition name="fade">
+            <div class="w-full h-33 flex flex-row flex-nowrap justify-between items-center gap-10" v-show="!disableScrollButtons">
+                <!-- Scroll left button -->
+                <div class="w-auto h-full sticky z-[1] top-0 left-0 dark:bg-gray-800">
+                    <button
+                        @click="scrollColumns('right')"
+                        :disabled="disableScrollButtons"
+                        aria-controls="columns-container"
+                        class="h-full w-content p-1 rounded-md drop-shadow-md bg-neutral hover:bg-primary disabled:opacity-25 disabled:hover:bg-neutral"
+                    >
+                        <ArrowLeftIcon class="stroke-current block mx-auto w-10" />
+                    </button>
+                </div>
+                <!-- /Scroll left button -->
+                <!-- Scroll Indicator -->
+<!--                <div class="carousel-indicator" aria-hidden="true" ref="carouselIndicatorElement"></div>-->
+                <!-- /Scroll Indicator -->
+                <!-- Scroll left button -->
+                <div class="w-auto h-full sticky z-[1] top-0 right-0 dark:bg-gray-800">
+                    <button
+                        @click="scrollColumns('left')"
+                        :disabled="disableScrollButtons"
+                        aria-controls="columns-container"
+                        class="h-full w-content p-1 rounded-md drop-shadow-md bg-neutral hover:bg-primary disabled:opacity-25 disabled:hover:bg-neutral"
+                    >
+                        <ArrowRightIcon class="stroke-current block mx-auto w-10" />
+                    </button>
+                </div>
+                <!-- /Scroll left button -->
             </div>
+        </Transition>
+        <div v-if="!!workspace._id" class="flex flex-1 flex-row flex-nowrap overflow-y-auto relative w-full"  @wheel="handleVerticalScroll" @scroll="changeCarouselIndicatorPosition">
+
+            <Suspense>
+                <ul :key="columns.length" class="grid grid-rows-1 grid-flow-col auto-cols-[21.378rem] gap-10 h-full py-10 list-none m-0" id="columns-container" ref="columnsContainer"  >
+                    <li v-for="(column, index) in columns" :key="column._id" :data-index="index" class="column-item">
+                        <WorkspaceColumn @alert="showAlert" :columnId="column._id" />
+                    </li>
+                    <li  v-if="!columns.length" class="column-item">
+                        <WorkspaceColumn />
+                    </li>
+                    <li :data-index="columns.length" class="column-item" id="add-column-item">
+                        <!-- Add Column -->
+                        <button
+                            @click="addColumn"
+                            class="w-[21.378rem] h-full p-10 rounded-box bg-neutral bg-opacity-30 hover:bg-white hover:bg-opacity-10 text-lg flex justify-center items-center cursor-pointer"
+                        >
+                            <PlusIcon class="stroke-current stroke-0 mx-auto w-36" />
+                            <span class="sr-only">Add new column</span>
+                        </button>
+                        <!-- /Add Column -->
+                    </li>
+                </ul>
+                <template #fallback>
+                    <div class="w-full h-full flex justify-center">
+                        <span class="loading loading-bars loading-lg"></span>
+                    </div>
+                </template>
+            </Suspense>
+        </div>
 
         <!-- Delete Workspace Modal -->
         <dialog :id="`${workspace._id}_delete_prompt`" class="modal" v-if="!!workspace._id" ref="deleteWorkspaceModal">
@@ -465,5 +597,13 @@
 </template>
 
 <style scoped>
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.5s ease;
+}
 
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
 </style>
