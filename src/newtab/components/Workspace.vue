@@ -2,7 +2,6 @@
     import * as browser from "webextension-polyfill"
     import {watch, ref, onMounted, nextTick, computed, Ref, onUpdated} from "vue"
     import { useRouter, useRoute } from "vue-router"
-    import WorkspaceColumn from "./WorkspaceColumn"
     import { v4 as uuidv4 } from "uuid"
     // import * as cheerio from "cheerio";
     import { useRxStore } from "~stores/useRxStore";
@@ -13,11 +12,16 @@
     import type { Workspace, Column, Link } from "~lib/App"
     import type { RxWorkspaceDocument, RxColumnDocument } from "~lib/RxDB";
 
+    // Components
+    import WorkspaceColumn from "./WorkspaceColumn"
+    import WorkspaceNotes from "./WorkspaceNotes"
+
 
     // Icons
     import { PlusIcon } from '@heroicons/vue/24/solid'
     import { EllipsisVerticalIcon } from '@heroicons/vue/24/solid'
     import { PencilSquareIcon } from '@heroicons/vue/24/outline'
+    import { ViewColumnsIcon } from '@heroicons/vue/24/outline'
     import { TrashIcon } from '@heroicons/vue/24/outline'
     import { ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
     import { ArrowUpOnSquareStackIcon } from '@heroicons/vue/24/outline'
@@ -61,6 +65,8 @@
         }
     })
 
+    const showWorkspaceNotes = ref(false)
+
 
     const workspaceNameInput = ref(null);
     const showWorkspaceNameInput = ref(false);
@@ -69,10 +75,10 @@
     const alertModalMessage = ref("")
     const columnsContainer = ref(null)
 
-    const carouselIndicatorElement = ref(null)
 
     // For the columns carousel functionality
     const disableScrollButtons = ref(false)
+    const carouselIndicatorElement = ref(null)
 
     const updateDisableScrollButtons = (): void => {
         if(!columnsContainer.value) {
@@ -441,6 +447,10 @@
             columnsContainer.value.parentElement.scrollBy(event.deltaY, 0)
         }
     }
+
+    const toggleWorkspaceNotes = () => {
+        showWorkspaceNotes.value = !showWorkspaceNotes.value
+    }
 </script>
 
 <template>
@@ -475,6 +485,16 @@
                         <BookmarkSquareIcon class="h-8 w-8" />
                     </a>
                 </li>
+                <li class="tooltip tooltip-bottom" data-tip="Open workspace notes"  v-show="!showWorkspaceNotes">
+                    <a class="btn btn-sm hover:btn-info" title="Open workspace notes" role="menuitem" @click="toggleWorkspaceNotes">
+                        <PencilSquareIcon class="h-8 w-8" />
+                    </a>
+                </li>
+                <li class="tooltip tooltip-bottom" data-tip="Open workspace collections"  v-show="showWorkspaceNotes">
+                    <a class="btn btn-sm hover:btn-info" title="Open workspace collections" role="menuitem" @click="toggleWorkspaceNotes">
+                        <ViewColumnsIcon class="h-8 w-8" />
+                    </a>
+                </li>
             </ul>
             <!-- /Workspace Quick Actions -->
 
@@ -498,7 +518,7 @@
             </form>
         </div>
         <Transition name="fade">
-            <div class="w-full h-33 flex flex-row flex-nowrap justify-between items-center gap-10" v-show="!disableScrollButtons">
+            <div class="w-full h-33 flex flex-row flex-nowrap justify-between items-center gap-10" v-show="!disableScrollButtons && !showWorkspaceNotes">
                 <!-- Scroll left button -->
                 <div class="w-auto h-full sticky z-[1] top-0 left-0 dark:bg-gray-800">
                     <button
@@ -558,6 +578,10 @@
             </Suspense>
         </div>
 
+        <Transition name="rise">
+            <WorkspaceNotes v-show="showWorkspaceNotes" :workspaceId="workspace._id" />
+        </Transition>
+
         <!-- Delete Workspace Modal -->
         <dialog :id="`${workspace._id}_delete_prompt`" class="modal" v-if="!!workspace._id" ref="deleteWorkspaceModal">
             <div class="modal-box w-full max-w-max">
@@ -599,11 +623,26 @@
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity 0.5s ease;
+    transition: opacity 0.25s ease;
 }
 
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+}
+
+.rise-enter-active,
+.rise-leave-active {
+    transition: all 0.5s ease;
+}
+
+.rise-enter-from,
+.rise-leave-to {
+    transform: translateY(100%);
+}
+
+.rise-enter-to,
+.rise-leave-from {
+    transform: translateY(0);
 }
 </style>

@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@editorjs/editorjs':
+    specifier: ^2.28.0
+    version: 2.28.0
   '@fortawesome/fontawesome-svg-core':
     specifier: ^1.2.36
     version: 1.2.36
@@ -323,6 +326,10 @@ packages:
       '@babel/helper-string-parser': 7.22.5
       '@babel/helper-validator-identifier': 7.22.5
       to-fast-properties: 2.0.0
+
+  /@editorjs/editorjs@2.28.0:
+    resolution: {integrity: sha512-v0KxSoX4MSZR5HyEbCo0vBri+qdThasABH9u1O1wC3ZxNMO7FiPJ580rp6uTPeFSDSQBmOL3VmRm7ZMfI3iKAg==}
+    dev: false
 
   /@esbuild/android-arm64@0.18.15:
     resolution: {integrity: sha512-NI/gnWcMl2kXt1HJKOn2H69SYn4YNheKo6NZt1hyfKWdMbaGadxjZIkcj4Gjk/WPxnbFXs9/3HjGHaknCqjrww==}
